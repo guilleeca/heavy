@@ -10,6 +10,7 @@ import { Icon } from '../components/Icon'
 import { ExercisePicker } from '../components/ExercisePicker'
 import { ExerciseThumb, PageHeader, Sheet, SheetItem, Spinner } from '../components/ui'
 import { WhenFields } from '../components/WhenFields'
+import { useCropQueue } from '../components/useCropQueue'
 import { SetBadge, SetTable } from './RoutineEditor'
 import './RoutineEditor.css'
 import './FinishWorkout.css'
@@ -67,6 +68,7 @@ function Editor({ workout: w }: { workout: Workout }) {
   const [items, setItems] = useState<KItem[]>(() => toItems(w.exercises))
   const [kept, setKept] = useState<string[]>(w.photos)
   const [added, setAdded] = useState<File[]>([])
+  const crop = useCropQueue((f) => setAdded((a) => [...a, f]))
   const [signed, setSigned] = useState<Record<string, string>>({})
   const [picker, setPicker] = useState<null | { replace?: number }>(null)
   const [menu, setMenu] = useState<Menu>(null)
@@ -206,12 +208,11 @@ function Editor({ workout: w }: { workout: Workout }) {
               <span>Foto</span>
               <input
                 type="file"
-                accept="image/jpeg,image/png,image/webp"
+                accept="image/*"
                 multiple
                 hidden
                 onChange={(e) => {
-                  const files = [...(e.target.files ?? [])].filter((f) => f.size <= 8 * 1024 * 1024)
-                  setAdded((a) => [...a, ...files].slice(0, 6 - kept.length))
+                  crop.enqueue([...(e.target.files ?? [])].slice(0, 6 - kept.length - added.length))
                   e.target.value = ''
                 }}
               />
@@ -367,6 +368,7 @@ function Editor({ workout: w }: { workout: Workout }) {
           </button>
         </div>
       </Sheet>
+      {crop.element}
     </div>
   )
 }

@@ -8,7 +8,7 @@ import { useData } from '../data/context'
 import { fmtDuration, fmtVolume } from '../lib/workouts'
 import { WorkoutCard } from '../components/WorkoutCard'
 import { Sheet } from '../components/ui'
-import { AvatarCropper } from '../components/AvatarCropper'
+import { ImageCropper } from '../components/ImageCropper'
 import './Profile.css'
 
 const METRICS = ['Duración', 'Volumen', 'Repeticiones'] as const
@@ -269,7 +269,7 @@ function EditProfile({
         </button>
       </div>
       {cropping && (
-        <AvatarCropper
+        <ImageCropper
           file={cropping}
           onCancel={() => setCropping(null)}
           onDone={(blob) => {

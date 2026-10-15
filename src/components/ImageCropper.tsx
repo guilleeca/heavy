@@ -1,12 +1,30 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import './AvatarCropper.css'
+import './ImageCropper.css'
 
 type Pt = { x: number; y: number }
-const OUT = 512 // px de la foto final
 
-/** Encuadrar la foto de perfil: arrastrar para mover y pellizcar (o la barra) para hacer zoom */
-export function AvatarCropper({ file, onCancel, onDone }: { file: File; onCancel: () => void; onDone: (blob: Blob) => void }) {
+/** Encuadrar una foto en cuadrado (perfil en círculo, entrenos en cuadrado):
+    arrastrar para mover y pellizcar (o la barra) para hacer zoom */
+export function ImageCropper({
+  file,
+  onCancel,
+  onDone,
+  shape = 'circle',
+  size = 512,
+  title = 'Mover y escalar',
+  step,
+}: {
+  file: File
+  onCancel: () => void
+  onDone: (blob: Blob) => void
+  shape?: 'circle' | 'square'
+  /** Lado en px de la imagen final */
+  size?: number
+  title?: string
+  /** "1 de 3" cuando se encuadran varias seguidas */
+  step?: string
+}) {
   const [src] = useState(() => URL.createObjectURL(file))
   const [img, setImg] = useState<HTMLImageElement | null>(null)
   const [V] = useState(() => Math.min(window.innerWidth - 48, 340)) // tamaño del círculo
@@ -54,21 +72,24 @@ export function AvatarCropper({ file, onCancel, onDone }: { file: File; onCancel
   function done() {
     if (!img) return
     const canvas = document.createElement('canvas')
-    canvas.width = OUT
-    canvas.height = OUT
+    canvas.width = size
+    canvas.height = size
     const ctx = canvas.getContext('2d')!
     ctx.imageSmoothingQuality = 'high'
-    ctx.drawImage(img, -pos.x / scale, -pos.y / scale, V / scale, V / scale, 0, 0, OUT, OUT)
+    ctx.drawImage(img, -pos.x / scale, -pos.y / scale, V / scale, V / scale, 0, 0, size, size)
     canvas.toBlob((b) => b && onDone(b), 'image/jpeg', 0.88)
   }
 
   return createPortal(
-    <div className="ac" role="dialog" aria-modal="true" aria-label="Encuadrar foto de perfil">
+    <div className="ac" role="dialog" aria-modal="true" aria-label={title}>
       <header className="ac-top">
         <button className="text-btn" onClick={onCancel}>
           Cancelar
         </button>
-        <b>Mover y escalar</b>
+        <b>
+          {title}
+          {step && <small>{step}</small>}
+        </b>
         <button className="ac-ok" onClick={done}>
           Listo
         </button>
@@ -101,7 +122,7 @@ export function AvatarCropper({ file, onCancel, onDone }: { file: File; onCancel
         onWheel={(e) => applyZoom(zoom * (e.deltaY < 0 ? 1.08 : 0.93))}
       >
         <img src={src} alt="" draggable={false} style={{ width: w, height: h, transform: `translate(${pos.x}px, ${pos.y}px)` }} />
-        <div className="ac-mask" />
+        <div className={`ac-mask ${shape}`} />
       </div>
 
       <label className="ac-zoom">

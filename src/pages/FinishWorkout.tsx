@@ -8,6 +8,7 @@ import { Icon } from '../components/Icon'
 import { PageHeader, Sheet, SheetItem } from '../components/ui'
 import { toast } from '../lib/toast'
 import { WhenFields } from '../components/WhenFields'
+import { useCropQueue } from '../components/useCropQueue'
 import './FinishWorkout.css'
 import './RoutineEditor.css'
 import './ActiveWorkout.css'
@@ -24,6 +25,7 @@ export function FinishWorkout() {
   const [description, setDescription] = useState('')
   const [visibility, setVisibility] = useState<'everyone' | 'private'>('everyone')
   const [photos, setPhotos] = useState<File[]>([])
+  const crop = useCropQueue((f) => setPhotos((p) => [...p, f].slice(0, 6)))
   const [sheet, setSheet] = useState<'visibility' | 'discard' | null>(null)
   const [saving, setSaving] = useState(false)
   // Hora y duración corregidas a mano (null = las reales)
@@ -119,12 +121,11 @@ export function FinishWorkout() {
               <input
                 id="workout-photos"
                 type="file"
-                accept="image/jpeg,image/png,image/webp"
+                accept="image/*"
                 multiple
                 hidden
                 onChange={(e) => {
-                  const files = [...(e.target.files ?? [])].filter((f) => f.size <= 8 * 1024 * 1024)
-                  setPhotos((p) => [...p, ...files].slice(0, 6))
+                  crop.enqueue([...(e.target.files ?? [])].slice(0, 6 - photos.length))
                   e.target.value = ''
                 }}
               />
@@ -179,6 +180,7 @@ export function FinishWorkout() {
           </button>
         </div>
       </Sheet>
+      {crop.element}
     </div>
   )
 }

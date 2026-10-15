@@ -19,8 +19,17 @@
 }
 
 .ac-top b {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   font-size: 17px;
   font-weight: 600;
+}
+
+.ac-top small {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-2);
 }
 
 .ac-ok {
@@ -58,7 +67,6 @@
 .ac-mask {
   position: absolute;
   inset: 0;
-  border-radius: 50%;
   box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
   outline: 2px solid rgba(255, 255, 255, 0.85);
   pointer-events: none;
@@ -83,4 +91,15 @@
   font-size: 13px;
   color: var(--text-3);
   text-align: center;
+}
+
+.ac-mask.circle {
+  border-radius: 50%;
+}
+
+/* Cuadrícula de tercios en las fotos de entreno */
+.ac-mask.square {
+  background:
+    linear-gradient(90deg, transparent calc(33.33% - 0.5px), rgba(255, 255, 255, 0.35) 0, rgba(255, 255, 255, 0.35) calc(33.33% + 0.5px), transparent 0, transparent calc(66.66% - 0.5px), rgba(255, 255, 255, 0.35) 0, rgba(255, 255, 255, 0.35) calc(66.66% + 0.5px), transparent 0),
+    linear-gradient(transparent calc(33.33% - 0.5px), rgba(255, 255, 255, 0.35) 0, rgba(255, 255, 255, 0.35) calc(33.33% + 0.5px), transparent 0, transparent calc(66.66% - 0.5px), rgba(255, 255, 255, 0.35) 0, rgba(255, 255, 255, 0.35) calc(66.66% + 0.5px), transparent 0);
 }

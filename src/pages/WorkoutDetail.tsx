@@ -9,6 +9,7 @@ import { ExerciseThumb, PageHeader, Sheet, SheetItem, Spinner } from '../compone
 import { SetBadge } from './RoutineEditor'
 import { Avatar } from './RoutineDetail'
 import { WorkoutSocial } from '../components/WorkoutSocial'
+import { PhotoViewer } from '../components/PhotoViewer'
 import './WorkoutDetail.css'
 
 /** Detalle de un entreno. Recién terminado, muestra la enhorabuena y los récords. */
@@ -19,6 +20,7 @@ export function WorkoutDetail() {
   const { workouts, findExercise, profiles, userId, ready, refresh } = useData()
   const [photoUrls, setPhotoUrls] = useState<string[]>([])
   const [menu, setMenu] = useState<'main' | 'delete' | null>(null)
+  const [viewer, setViewer] = useState<number | null>(null)
   const w = workouts.find((x) => x.id === id)
   const fresh = params.get('nuevo') === '1'
 
@@ -126,10 +128,13 @@ export function WorkoutDetail() {
         {photoUrls.length > 0 && (
           <div className="wd-photos">
             {photoUrls.map((u, i) => (
-              <img key={u} src={u} alt={`Foto ${i + 1} del entreno`} />
+              <button key={u} onClick={() => setViewer(i)} aria-label={`Ver foto ${i + 1} del entreno`}>
+                <img src={u} alt="" />
+              </button>
             ))}
           </div>
         )}
+        {viewer != null && <PhotoViewer urls={photoUrls} start={viewer} onClose={() => setViewer(null)} />}
 
         <WorkoutSocial workout={w} preview={3} />
 

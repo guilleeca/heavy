@@ -10,6 +10,7 @@ import { BodyMap } from './BodyMap'
 import { Icon } from './Icon'
 import { ExerciseThumb } from './ui'
 import { WorkoutSocial } from './WorkoutSocial'
+import { PhotoViewer } from './PhotoViewer'
 import './WorkoutCard.css'
 
 /** Fotos privadas: enlaces firmados de 1 hora (se piden una vez por tarjeta) */
@@ -48,6 +49,7 @@ export const WorkoutCard = memo(function WorkoutCard({ workout }: { workout: Wor
 
   const track = useRef<HTMLDivElement>(null)
   const [slide, setSlide] = useState(0)
+  const [viewer, setViewer] = useState<number | null>(null)
   const slides = photos.length + 2
   const open = () => navigate(`/entreno/${workout.id}`)
   const go = (i: number) => track.current?.scrollTo({ left: i * track.current.clientWidth, behavior: 'smooth' })
@@ -102,7 +104,7 @@ export const WorkoutCard = memo(function WorkoutCard({ workout }: { workout: Wor
           }}
         >
           {photos.map((src, i) => (
-            <button key={src} className="wc-slide wc-photo" onClick={open} aria-label={`Foto ${i + 1} del entreno`}>
+            <button key={src} className="wc-slide wc-photo" onClick={() => setViewer(i)} aria-label={`Ver foto ${i + 1} del entreno`}>
               <img src={src} alt="" loading="lazy" decoding="async" />
             </button>
           ))}
@@ -150,6 +152,7 @@ export const WorkoutCard = memo(function WorkoutCard({ workout }: { workout: Wor
       </div>
 
       <WorkoutSocial workout={workout} />
+      {viewer != null && <PhotoViewer urls={photos} start={viewer} onClose={() => setViewer(null)} />}
     </article>
   )
 })
