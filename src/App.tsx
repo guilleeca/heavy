@@ -10,6 +10,7 @@ import { ExerciseDetail } from './pages/ExerciseDetail'
 import { NewExercise } from './pages/NewExercise'
 import { RoutineDetail } from './pages/RoutineDetail'
 import { RoutineEditor } from './pages/RoutineEditor'
+import { ImportHevy } from './pages/ImportHevy'
 import { Explore } from './pages/Explore'
 import { DataProvider } from './data/DataProvider'
 import { ActiveWorkoutProvider } from './workout/ActiveWorkoutProvider'
@@ -38,6 +39,7 @@ const router = createHashRouter([
   { path: '/rutina/:id', element: <RoutineDetail /> },
   { path: '/rutina/:id/editar', element: <RoutineEditor /> },
   { path: '/explorar', element: <Explore /> },
+  { path: '/importar', element: <ImportHevy /> },
   { path: '/entreno', element: <ActiveWorkout /> },
   { path: '/entreno/guardar', element: <FinishWorkout /> },
   { path: '/entreno/:id', element: <WorkoutDetail /> },

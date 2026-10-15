@@ -70,6 +70,9 @@ export function Profile() {
         {menu && (
           <div className="pf-menu" role="menu">
             <p>{session?.user.email}</p>
+            <button role="menuitem" className="plain" onClick={() => navigate('/importar')}>
+              Importar de Hevy
+            </button>
             <button role="menuitem" onClick={() => supabase.auth.signOut()}>
               Cerrar sesión
             </button>
