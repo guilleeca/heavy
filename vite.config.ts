@@ -10,6 +10,8 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      // El registro se hace en src/main.tsx para buscar actualizaciones al volver a la app
+      injectRegister: false,
       includeAssets: ['favicon.png', 'apple-touch-icon.png'],
       manifest: {
         name: 'Heavy',
@@ -31,6 +33,8 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,svg,woff2}'],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
+        // Botones de la notificación del entreno
+        importScripts: ['notifications-sw.js'],
         navigateFallback: '/heavy/index.html',
         runtimeCaching: [
           {

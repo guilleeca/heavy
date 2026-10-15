@@ -15,6 +15,7 @@ import {
 } from '../lib/workouts'
 import { ActiveWorkoutContext, type ActiveWorkoutApi, type FinishInput } from './context'
 import { restDoneAlert } from './feedback'
+import { askNotificationPermission, closeWorkoutNotification, nextPending, showWorkoutNotification } from './notify'
 
 const storageKey = (userId: string) => `heavy.active.${userId}`
 
@@ -39,7 +40,7 @@ const emptySet = (prev?: LiveSet): LiveSet => ({
 
 /** Guarda el entreno en curso en el móvil y lo publica "en directo" para el otro. */
 export function ActiveWorkoutProvider({ children }: { children: ReactNode }) {
-  const { userId, workouts, findExercise, refresh, live } = useData()
+  const { userId, workouts, findExercise, refresh, live, ready } = useData()
   const [active, setActive] = useState<ActiveWorkout | null>(() => (userId ? load(userId) : null))
 
   // Guardar en el móvil en cada cambio
@@ -93,18 +94,21 @@ export function ActiveWorkoutProvider({ children }: { children: ReactNode }) {
   // Publicar agrupando cambios seguidos…
   const liveTimer = useRef<number | undefined>(undefined)
   const latest = useRef<ActiveWorkout | null>(null)
+  const finishing = useRef(false)
   useEffect(() => {
     latest.current = active
     if (!active || !userId) return
     window.clearTimeout(liveTimer.current)
-    liveTimer.current = window.setTimeout(() => void publish(active), 1500)
+    liveTimer.current = window.setTimeout(() => {
+      if (!finishing.current) void publish(active)
+    }, 1500)
     return () => window.clearTimeout(liveTimer.current)
   }, [active, userId, publish])
 
   // …y al instante si la app pasa a segundo plano o se cierra
   useEffect(() => {
     const flush = () => {
-      if (document.visibilityState === 'hidden' && latest.current) {
+      if (document.visibilityState === 'hidden' && latest.current && !finishing.current) {
         window.clearTimeout(liveTimer.current)
         void publish(latest.current)
       }
@@ -117,18 +121,33 @@ export function ActiveWorkoutProvider({ children }: { children: ReactNode }) {
     }
   }, [publish])
 
-  // Si el móvil perdió el entreno local pero hay copia en la nube, se recupera
-  const restored = useRef(false)
+  // Al abrir la app (una sola vez): si el móvil perdió el entreno local pero
+  // hay copia en la nube, se recupera. Si esa copia es de un entreno que ya
+  // se guardó, se borra.
+  const cloudChecked = useRef(false)
   useEffect(() => {
-    if (restored.current || active || !userId) return
+    if (cloudChecked.current || !ready || !userId) return
+    cloudChecked.current = true
     const mine = live.find((l) => l.user_id === userId)
-    const state = mine?.snapshot.state as ActiveWorkout | undefined
-    if (state?.id && Array.isArray(state.exercises)) {
-      restored.current = true
-      // oxlint-disable-next-line react/set-state-in-effect
-      setActive(state)
+    if (!mine) return
+    const state = mine.snapshot.state as ActiveWorkout | undefined
+    const valid = !!state?.id && Array.isArray(state.exercises)
+    if (!valid || workouts.some((w) => w.id === state.id)) {
+      void Promise.resolve(supabase.from('live_sessions').delete().eq('user_id', userId)).then(() => undefined)
+      return
     }
-  }, [live, active, userId])
+    // oxlint-disable-next-line react/set-state-in-effect
+    if (!active) setActive(state)
+  }, [ready, live, workouts, active, userId])
+
+  // Un entreno que ya está guardado nunca puede seguir "en curso"
+  useEffect(() => {
+    if (active && workouts.some((w) => w.id === active.id)) {
+      // oxlint-disable-next-line react/set-state-in-effect
+      setActive(null)
+      void Promise.resolve(supabase.from('live_sessions').delete().eq('user_id', userId)).then(() => undefined)
+    }
+  }, [active, workouts, userId])
 
   // Pedir al navegador que no borre los datos de la app
   useEffect(() => {
@@ -141,13 +160,18 @@ export function ActiveWorkoutProvider({ children }: { children: ReactNode }) {
     const ms = active.rest.endsAt - Date.now()
     const t = window.setTimeout(
       () => {
-        restDoneAlert()
-        setActive((a) => (a ? { ...a, rest: null } : a))
+        setActive((a) => {
+          if (!a) return a
+          const next = { ...a, rest: null }
+          if (document.visibilityState === 'hidden') void showWorkoutNotification(next, findExercise, true)
+          else restDoneAlert()
+          return next
+        })
       },
       Math.max(0, ms),
     )
     return () => window.clearTimeout(t)
-  }, [active?.rest])
+  }, [active?.rest, findExercise])
 
   const mutate = useCallback((fn: (a: ActiveWorkout) => ActiveWorkout) => setActive((a) => (a ? fn(a) : a)), [])
   const mutateEx = useCallback(
@@ -171,10 +195,87 @@ export function ActiveWorkoutProvider({ children }: { children: ReactNode }) {
     [workouts, userId],
   )
 
+  /** Marcar / desmarcar una serie (rellena valores vacíos y arranca el descanso) */
+  const toggleIn = useCallback(
+    (a: ActiveWorkout, ei: number, si: number): ActiveWorkout => {
+          const e = a.exercises[ei]
+          const s = e.sets[si]
+          const done = !s.done
+          // Si la serie se marca sin escribir nada, se rellenan con lo de la vez anterior / la rutina
+          const eff = done ? effective(s, previousSets(workouts, userId, e.exerciseId)[si]) : null
+          const exercises = a.exercises.map((x, i) =>
+            i === ei
+              ? {
+                  ...x,
+                  sets: x.sets.map((y, k) =>
+                    k === si ? { ...y, done, weight: y.weight ?? eff?.weight ?? null, reps: y.reps ?? eff?.reps ?? null, duration: y.duration ?? eff?.duration ?? null } : y,
+                  ),
+                }
+              : x,
+          )
+          // Al completar una serie arranca el descanso del ejercicio
+          const rest = done && e.restSeconds > 0 ? { endsAt: Date.now() + e.restSeconds * 1000, total: e.restSeconds } : done ? null : a.rest
+          return { ...a, exercises, rest }
+        },
+    [workouts, userId],
+  )
+
+  // Notificación con botones mientras la app está en segundo plano
+  useEffect(() => {
+    const onVisibility = () => {
+      const a = latest.current
+      if (!a) return
+      if (document.visibilityState === 'hidden') void showWorkoutNotification(a, findExercise)
+      else void closeWorkoutNotification()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [findExercise])
+
+  // Si el entreno cambia estando en segundo plano (por un botón), se actualiza la notificación
+  useEffect(() => {
+    if (!active) {
+      void closeWorkoutNotification()
+      return
+    }
+    if (document.visibilityState === 'hidden') void showWorkoutNotification(active, findExercise)
+  }, [active, findExercise])
+
+  // Botones de la notificación (llegan desde el service worker)
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return
+    const onMessage = (ev: MessageEvent) => {
+      const msg = ev.data as { type?: string; action?: string }
+      if (msg?.type !== 'heavy-action') return
+      const shift = (a: ActiveWorkout, d: number): ActiveWorkout =>
+        a.rest ? { ...a, rest: { endsAt: Math.max(Date.now() + 1000, a.rest.endsAt + d * 1000), total: Math.max(a.rest.total + d, 1) } } : a
+      setActive((a) => {
+        if (!a) return a
+        switch (msg.action) {
+          case 'rest-minus':
+            return shift(a, -15)
+          case 'rest-plus':
+            return shift(a, 15)
+          case 'rest-skip':
+            return { ...a, rest: null }
+          case 'complete': {
+            const next = nextPending(a)
+            return next ? toggleIn(a, next[0], next[1]) : a
+          }
+          default:
+            return a
+        }
+      })
+    }
+    navigator.serviceWorker.addEventListener('message', onMessage)
+    return () => navigator.serviceWorker.removeEventListener('message', onMessage)
+  }, [toggleIn])
+
   const api: ActiveWorkoutApi = useMemo(
     () => ({
       active,
       start: (routine?: Routine) => {
+        void askNotificationPermission()
         const id = uid()
         try {
           sessionStorage.setItem('heavy.resumed', id)
@@ -205,11 +306,14 @@ export function ActiveWorkoutProvider({ children }: { children: ReactNode }) {
         })
       },
       discard: async () => {
+        window.clearTimeout(liveTimer.current)
         setActive(null)
         await supabase.from('live_sessions').delete().eq('user_id', userId)
       },
       finish: async (input: FinishInput) => {
         if (!active) return null
+        finishing.current = true
+        window.clearTimeout(liveTimer.current)
         // Solo se guardan las series marcadas como hechas
         const exercises: WorkoutExercise[] = active.exercises
           .map((e) => {
@@ -248,9 +352,13 @@ export function ActiveWorkoutProvider({ children }: { children: ReactNode }) {
           photos,
           visibility: input.visibility,
         })
-        if (error) return null
-        await supabase.from('live_sessions').delete().eq('user_id', userId)
+        if (error) {
+          finishing.current = false
+          return null
+        }
         setActive(null)
+        await supabase.from('live_sessions').delete().eq('user_id', userId)
+        finishing.current = false
         await refresh()
         return id
       },
@@ -272,27 +380,7 @@ export function ActiveWorkoutProvider({ children }: { children: ReactNode }) {
       removeSet: (ei, si) => mutateEx(ei, (e) => ({ ...e, sets: e.sets.filter((_, i) => i !== si) })),
       setSetType: (ei, si, type) => mutateEx(ei, (e) => ({ ...e, sets: e.sets.map((s, i) => (i === si ? { ...s, type } : s)) })),
       updateSet: (ei, si, patch) => mutateEx(ei, (e) => ({ ...e, sets: e.sets.map((s, i) => (i === si ? { ...s, ...patch } : s)) })),
-      toggleDone: (ei, si) =>
-        mutate((a) => {
-          const e = a.exercises[ei]
-          const s = e.sets[si]
-          const done = !s.done
-          // Si la serie se marca sin escribir nada, se rellenan con lo de la vez anterior / la rutina
-          const eff = done ? effective(s, previousSets(workouts, userId, e.exerciseId)[si]) : null
-          const exercises = a.exercises.map((x, i) =>
-            i === ei
-              ? {
-                  ...x,
-                  sets: x.sets.map((y, k) =>
-                    k === si ? { ...y, done, weight: y.weight ?? eff?.weight ?? null, reps: y.reps ?? eff?.reps ?? null, duration: y.duration ?? eff?.duration ?? null } : y,
-                  ),
-                }
-              : x,
-          )
-          // Al completar una serie arranca el descanso del ejercicio
-          const rest = done && e.restSeconds > 0 ? { endsAt: Date.now() + e.restSeconds * 1000, total: e.restSeconds } : done ? null : a.rest
-          return { ...a, exercises, rest }
-        }),
+      toggleDone: (ei, si) => mutate((a) => toggleIn(a, ei, si)),
       adjustRest: (delta) =>
         mutate((a) => {
           if (!a.rest) return a
@@ -301,7 +389,7 @@ export function ActiveWorkoutProvider({ children }: { children: ReactNode }) {
         }),
       skipRest: () => mutate((a) => ({ ...a, rest: null })),
     }),
-    [active, userId, workouts, findExercise, refresh, mutate, mutateEx, liveExercise],
+    [active, userId, workouts, findExercise, refresh, mutate, mutateEx, liveExercise, toggleIn],
   )
 
   return <ActiveWorkoutContext.Provider value={api}>{children}</ActiveWorkoutContext.Provider>
