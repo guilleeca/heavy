@@ -49,14 +49,21 @@ const LIBRARY_MAP: Record<string, string> = {
   'remo con mancuerna': 'C0MA9bC',
   'curls de concentracion': 'gvsWLQw',
   'patada de triceps': 'bQy2Eni',
+  'remo sentado con agarre en v (cable)': 'Tq6gbK6',
+  'remo en base rotativa': 'w2oRpuH',
+  'extension de triceps (cable)': '2IxROQ1',
+  'pull over unilateral polea': 'x69MAlq',
+  'press pallof con cable': '9pa4H5m',
+  'cable core palloff press': '9pa4H5m',
+  'jalon de remo a un brazo': 'WrYPP2g',
+  'pullover (maquina)': '4U7iLb5',
+  'zancada curtsy (mancuerna)': 'gUjqdei',
 }
 
 /** Nombres distintos en Hevy que son el mismo ejercicio personalizado */
 const SAME_AS: Record<string, string> = {
   'behind the back curl (cable)': 'Curl por detrás de la espalda (Polea)',
   'curl por detras de la espalda (polea)': 'Curl por detrás de la espalda (Polea)',
-  'press pallof con cable': 'Press Pallof (Polea)',
-  'cable core palloff press': 'Press Pallof (Polea)',
 }
 
 const key = (s: string) => fold(s).replace(/\s+/g, ' ').trim()

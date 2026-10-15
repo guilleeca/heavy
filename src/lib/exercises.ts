@@ -23,6 +23,8 @@ export type Exercise = {
   userId?: string
   /** Hay otro ejercicio con el mismo nombre en español: se muestra el original */
   ambiguous?: boolean
+  /** Animación guardada con otro id en ExerciseDB (duplicados de la API) */
+  gifId?: string
 }
 
 export const MUSCLE_LABEL: Record<Muscle, string> = {
@@ -48,9 +50,9 @@ export const MUSCLES = (Object.keys(MUSCLE_LABEL) as Muscle[]).sort((a, b) => MU
 export const EQUIPMENTS = Object.keys(EQUIPMENT_LABEL) as Equipment[]
 
 /** Animación del ejercicio (ExerciseDB). Los personalizados no tienen. */
-export const gifUrl = (ex: Exercise) => (ex.custom ? null : `https://static.exercisedb.dev/media/${ex.id}.gif`)
+export const gifUrl = (ex: Exercise) => (ex.custom ? null : `https://static.exercisedb.dev/media/${ex.gifId ?? ex.id}.gif`)
 
-type Raw = { id: string; n: string; en: string; eq: Equipment; m: Muscle; s: Muscle[]; t: ExerciseType; d?: 1 }
+type Raw = { id: string; n: string; en: string; eq: Equipment; m: Muscle; s: Muscle[]; t: ExerciseType; d?: 1; g?: string }
 
 let library: Exercise[] | null = null
 let loading: Promise<Exercise[]> | null = null
@@ -60,7 +62,7 @@ export function loadLibrary(): Promise<Exercise[]> {
   if (library) return Promise.resolve(library)
   loading ??= import('../data/exercises.json').then((mod) => {
     const raw = mod.default as Raw[]
-    library = raw.map((r) => ({ id: r.id, name: r.n, nameEn: r.en, equipment: r.eq, muscle: r.m, secondary: r.s, type: r.t, ambiguous: r.d === 1 }))
+    library = raw.map((r) => ({ id: r.id, name: r.n, nameEn: r.en, equipment: r.eq, muscle: r.m, secondary: r.s, type: r.t, ambiguous: r.d === 1, gifId: r.g }))
     return library
   })
   return loading
