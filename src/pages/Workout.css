@@ -1,0 +1,44 @@
+.wk-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.wk-start {
+  justify-content: flex-start;
+  min-height: 48px;
+}
+
+.wk-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.wk-actions .btn {
+  min-height: 48px;
+}
+
+.wk-folder {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-2);
+  font-size: 15px;
+  font-weight: 500;
+  padding: 4px 0;
+}
+
+.wk-folder svg {
+  transition: transform 0.15s;
+}
+
+.wk-closed {
+  transform: rotate(-90deg);
+}
+
+.wk-empty {
+  padding: 16px;
+  background: var(--surface);
+  border-radius: var(--r-md);
+}

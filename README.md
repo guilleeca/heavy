@@ -1,32 +1,50 @@
-# React + TypeScript + Vite
+# Heavy
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+App privada para registrar entrenos de gimnasio, carreras y rutas de senderismo, pensada para dos personas (mi hermano y yo). Inspirada en Hevy.
 
-Currently, two official plugins are available:
+Es una **PWA**: una web que se instala en Android desde Chrome y funciona como una app, también sin conexión.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- App: https://guilleeca.github.io/heavy/
+- Instalar en Android: abrir la URL en Chrome → menú ⋮ → **Instalar app**.
 
-## React Compiler
+## Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- [Vite](https://vite.dev) + [React](https://react.dev) + TypeScript
+- [React Router](https://reactrouter.com) (rutas con `#`, compatibles con GitHub Pages)
+- [vite-plugin-pwa](https://vite-pwa-org.netlify.app) para instalarla y usarla sin conexión
+- [Supabase](https://supabase.com) (PostgreSQL) para cuentas y datos — *próximo paso*
+- Publicación automática en GitHub Pages con GitHub Actions (`.github/workflows/deploy.yml`)
 
-## Expanding the Oxlint configuration
+## Desarrollo
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install      # instalar dependencias
+npm run dev      # app en http://localhost:5173/heavy/
+npm run build    # compilar a dist/
+npm run lint     # revisar el código
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Cada push a `main` compila y publica la app.
+
+## Estructura
+
+```
+src/
+  main.tsx            arranque y rutas
+  styles/theme.css    colores, tipografía y estilos base
+  components/         piezas comunes (barra de pestañas, iconos)
+  pages/              una pantalla por archivo: Inicio, Entrenamiento, Perfil
+public/               iconos de la app
+```
+
+## Hoja de ruta
+
+1. ~~Repositorio y publicación en GitHub Pages~~
+2. ~~Esqueleto: tema, navegación e instalación en el móvil~~
+3. Supabase: cuentas para los dos y base de datos
+4. Ejercicios y rutinas (carpetas, notas por ejercicio)
+5. Entreno en directo
+6. Rutas y carreras: importar GPX, mapa, altitud y parciales
+7. Inicio: canal con me gusta y comentarios
+8. Perfil: estadísticas, calendario y récords
+9. Strava (opcional)

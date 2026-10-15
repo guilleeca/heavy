@@ -1,0 +1,125 @@
+.pf-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.pf-avatar {
+  width: 76px;
+  height: 76px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--surface-2);
+  display: grid;
+  place-items: center;
+  font-size: 30px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.pf-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pf-info strong {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.pf-stats {
+  display: flex;
+  gap: 18px;
+}
+
+.pf-stats div {
+  display: flex;
+  flex-direction: column;
+}
+
+.pf-stats span {
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.pf-stats b {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.pf-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pf-chart-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pf-chart-head b {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.pf-chart-head span {
+  color: var(--text-2);
+  font-size: 14px;
+}
+
+.pf-range {
+  font-size: 13px !important;
+}
+
+.pf-bars {
+  height: 120px;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  align-items: end;
+  gap: 6px;
+  border-bottom: 1px solid var(--line);
+}
+
+.pf-bars i {
+  height: 3px;
+  border-radius: 2px 2px 0 0;
+  background: var(--surface-3);
+}
+
+.pf-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pf-chip {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.pf-chip[aria-pressed='true'] {
+  background: var(--accent);
+}
+
+.pf-panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.pf-panel-btn {
+  justify-content: flex-start;
+  min-height: 48px;
+}

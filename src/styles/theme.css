@@ -1,0 +1,84 @@
+/* Heavy · tema oscuro inspirado en Hevy.
+   Fondo negro puro, tarjetas grafito, acento azul. Todos los colores salen de estos tokens. */
+:root {
+  --bg: #000000;
+  --surface: #1a1a1c;      /* tarjetas */
+  --surface-2: #26262a;    /* botones secundarios, inputs */
+  --surface-3: #323237;    /* pulsado / separadores fuertes */
+  --line: #2a2a2e;
+  --text: #ffffff;
+  --text-2: #a1a1a8;       /* secundario */
+  --text-3: #6e6e76;       /* terciario, placeholders */
+  --accent: #1c8cff;
+  --accent-press: #1576d9;
+  --accent-soft: rgba(28, 140, 255, 0.14);
+  --success: #2fc65f;
+  --success-soft: rgba(47, 198, 95, 0.16);
+  --danger: #ff453a;
+  --warning: #ffb020;
+  --muscle: #e5352b;
+  --muscle-soft: #f08a80;
+
+  --font: 'Inter Variable', Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --tabbar-h: 58px;
+
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: 400 15px/1.4 var(--font);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+#root {
+  min-height: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: 0;
+  background: none;
+  padding: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
