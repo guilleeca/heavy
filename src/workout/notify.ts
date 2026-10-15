@@ -2,7 +2,7 @@
    descanso con −15 s / +15 s / Saltar, y "Completar serie" cuando no hay descanso. */
 
 import type { Exercise } from '../lib/exercises'
-import { fmtKg, type ActiveWorkout } from '../lib/workouts'
+import { fmtClock, fmtKg, type ActiveWorkout } from '../lib/workouts'
 
 const TAG = 'heavy-workout'
 
@@ -53,7 +53,10 @@ export async function showWorkoutNotification(a: ActiveWorkout, find: (id: strin
       : 'Todas las series completadas'
 
   const resting = a.rest && a.rest.endsAt > Date.now()
-  const title = restDone ? '¡Descanso terminado!' : resting ? `Descanso hasta las ${time(a.rest!.endsAt)}` : a.title
+  // Cuenta atrás: se vuelve a pintar cada segundo mientras dura el descanso
+  const left = resting ? Math.ceil((a.rest!.endsAt - Date.now()) / 1000) : 0
+  const title = restDone ? '¡Descanso terminado!' : resting ? `Descanso ${fmtClock(left)}` : a.title
+  const body = resting ? `${nextLine}\nTermina a las ${time(a.rest!.endsAt)}` : nextLine
   const actions = resting
     ? [
         // Android muestra como máximo 2 botones; "Saltar" está dentro de la app
@@ -67,7 +70,7 @@ export async function showWorkoutNotification(a: ActiveWorkout, find: (id: strin
   // Algunas opciones (acciones, vibración…) aún no están en los tipos de TypeScript
   const options: Record<string, unknown> = {
     tag: TAG,
-    body: nextLine,
+    body,
     icon: `${import.meta.env.BASE_URL}pwa-192.png`,
     badge: `${import.meta.env.BASE_URL}pwa-192.png`,
     // Solo suena y vibra al terminar el descanso; las actualizaciones son silenciosas

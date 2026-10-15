@@ -232,7 +232,16 @@ export function ActiveWorkoutProvider({ children }: { children: ReactNode }) {
       return
     }
     notifyTimer.current = window.setTimeout(() => void showWorkoutNotification(active, findExercise, restDone), restDone ? 0 : 400)
-    return () => window.clearTimeout(notifyTimer.current)
+    // Durante el descanso, la cuenta atrás de la notificación baja segundo a segundo
+    const tick = active.rest
+      ? window.setInterval(() => {
+          if (active.rest && active.rest.endsAt > Date.now()) void showWorkoutNotification(active, findExercise)
+        }, 1000)
+      : undefined
+    return () => {
+      window.clearTimeout(notifyTimer.current)
+      window.clearInterval(tick)
+    }
   }, [active, findExercise])
 
   // Botones de la notificación (llegan desde el service worker)
