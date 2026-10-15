@@ -16,6 +16,7 @@ import { Calendar } from './pages/Calendar'
 import { Measures } from './pages/Measures'
 import { Explore } from './pages/Explore'
 import { DataProvider } from './data/DataProvider'
+import { SocialProvider } from './data/SocialProvider'
 import { ActiveWorkoutProvider } from './workout/ActiveWorkoutProvider'
 import { ActiveWorkout } from './pages/ActiveWorkout'
 import { FinishWorkout } from './pages/FinishWorkout'
@@ -64,9 +65,11 @@ export function App() {
   }
   return session ? (
     <DataProvider>
-      <ActiveWorkoutProvider>
-        <RouterProvider router={router} />
-      </ActiveWorkoutProvider>
+      <SocialProvider>
+        <ActiveWorkoutProvider>
+          <RouterProvider router={router} />
+        </ActiveWorkoutProvider>
+      </SocialProvider>
     </DataProvider>
   ) : (
     <Login />

@@ -1,0 +1,174 @@
+.ws {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ws-actions {
+  display: flex;
+  gap: 18px;
+  margin-left: -4px;
+}
+
+.ws-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 4px;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.ws-btn.liked {
+  color: var(--danger);
+}
+
+.ws-btn.liked span {
+  color: var(--text);
+}
+
+.ws-btn.liked svg {
+  animation: ws-pop 0.25s ease-out;
+}
+
+@keyframes ws-pop {
+  50% {
+    transform: scale(1.25);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ws-btn.liked svg {
+    animation: none;
+  }
+}
+
+.ws-likes {
+  margin: -4px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.ws-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+  font-size: 14px;
+}
+
+.ws-all {
+  color: var(--text-2);
+}
+
+.ws-line {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ws-line b {
+  font-weight: 600;
+}
+
+/* hoja de comentarios */
+.ws-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ws-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ws-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.ws-comment {
+  flex: 1;
+  min-width: 0;
+}
+
+.ws-comment b {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.ws-comment small {
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.ws-comment p {
+  margin: 2px 0 0;
+  font-size: 15px;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.ws-del {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  color: var(--text-3);
+}
+
+.ws-empty {
+  margin: 8px 0;
+  text-align: center;
+  color: var(--text-2);
+}
+
+.ws-form {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 4px 0;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.ws-form input {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 16px;
+  outline: 0;
+}
+
+.ws-send {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+}
+
+.ws-send:disabled {
+  background: var(--surface-2);
+  color: var(--text-3);
+}

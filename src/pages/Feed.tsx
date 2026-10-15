@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router'
 import { useData } from '../data/context'
 import { fmtClock } from '../lib/workouts'
@@ -13,6 +14,7 @@ import './LiveView.css'
 export function Feed() {
   const { workouts, live, profiles, userId, findExercise, ready } = useData()
   const now = useNow(1000)
+  const [limit, setLimit] = useState(20)
   const others = live.filter((l) => l.user_id !== userId)
 
   return (
@@ -49,7 +51,16 @@ export function Feed() {
             <p>Cuando tú o tu hermano terminéis un entreno, aparecerá aquí.</p>
           </div>
         ) : (
-          workouts.slice(0, 40).map((w) => <WorkoutCard key={w.id} workout={w} />)
+          <>
+            {workouts.slice(0, limit).map((w) => (
+              <WorkoutCard key={w.id} workout={w} />
+            ))}
+            {workouts.length > limit && (
+              <button className="btn btn-block" onClick={() => setLimit(limit + 20)}>
+                Ver más entrenos
+              </button>
+            )}
+          </>
         )}
       </div>
     </>

@@ -8,6 +8,7 @@ import { Icon } from '../components/Icon'
 import { ExerciseThumb, PageHeader, Sheet, SheetItem, Spinner } from '../components/ui'
 import { SetBadge } from './RoutineEditor'
 import { Avatar } from './RoutineDetail'
+import { WorkoutSocial } from '../components/WorkoutSocial'
 import './WorkoutDetail.css'
 
 /** Detalle de un entreno. Recién terminado, muestra la enhorabuena y los récords. */
@@ -129,6 +130,8 @@ export function WorkoutDetail() {
             ))}
           </div>
         )}
+
+        <WorkoutSocial workout={w} preview={3} />
 
         {records.length > 0 && (
           <section className="card wd-records">

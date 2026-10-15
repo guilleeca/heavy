@@ -33,6 +33,9 @@ const PATHS = {
   move: 'M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM10 13h6M13 10l3 3-3 3',
   play: 'M7 4.5v15l12-7.5z',
   trophy: 'M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8.5 20h7M10 17h4v3h-4z',
+  heart: 'M12 20.5s-7.5-4.6-9.2-9.4C1.6 7.6 3.9 4.5 7.2 4.5c2 0 3.5 1.1 4.8 2.9 1.3-1.8 2.8-2.9 4.8-2.9 3.3 0 5.6 3.1 4.4 6.6-1.7 4.8-9.2 9.4-9.2 9.4z',
+  comment: 'M21 11.5a8.5 8.5 0 0 1-12.4 7.6L3.5 20.5l1.4-4.6A8.5 8.5 0 1 1 21 11.5z',
+  send: 'M21 3 10 14M21 3l-6.5 18-4.5-7-7-4.5z',
   live: 'M12 13.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.5 5.5a9 9 0 0 0 0 13M18.5 5.5a9 9 0 0 1 0 13',
 } as const
 
@@ -43,16 +46,18 @@ type Props = {
   size?: number
   stroke?: number
   className?: string
+  /** Relleno (p. ej. corazón de "me gusta" marcado) */
+  filled?: boolean
 }
 
-export function Icon({ name, size = 24, stroke = 1.8, className }: Props) {
+export function Icon({ name, size = 24, stroke = 1.8, className, filled }: Props) {
   return (
     <svg
       className={className}
       width={size}
       height={size}
       viewBox="0 0 24 24"
-      fill="none"
+      fill={filled ? 'currentColor' : 'none'}
       stroke="currentColor"
       strokeWidth={name === 'more' ? 3 : stroke}
       strokeLinecap="round"
