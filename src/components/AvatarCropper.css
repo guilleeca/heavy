@@ -1,0 +1,86 @@
+.ac {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  background: #000;
+  padding: env(safe-area-inset-top, 0px) 16px calc(env(safe-area-inset-bottom, 0px) + 24px);
+}
+
+.ac-top {
+  align-self: stretch;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  min-height: 52px;
+}
+
+.ac-top b {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.ac-ok {
+  justify-self: end;
+  height: 34px;
+  padding: 0 16px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.ac-stage {
+  position: relative;
+  margin-top: auto;
+  overflow: hidden;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+}
+
+.ac-stage:active {
+  cursor: grabbing;
+}
+
+.ac-stage img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: none;
+  pointer-events: none;
+}
+
+/* Círculo transparente con el resto oscurecido */
+.ac-mask {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
+  outline: 2px solid rgba(255, 255, 255, 0.85);
+  pointer-events: none;
+}
+
+.ac-zoom {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(340px, 100%);
+  color: var(--text-2);
+  font-size: 22px;
+}
+
+.ac-zoom input {
+  flex: 1;
+  accent-color: var(--accent);
+}
+
+.ac-hint {
+  margin: 0 0 auto;
+  font-size: 13px;
+  color: var(--text-3);
+  text-align: center;
+}

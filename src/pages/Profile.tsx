@@ -8,6 +8,7 @@ import { useData } from '../data/context'
 import { fmtDuration, fmtVolume } from '../lib/workouts'
 import { WorkoutCard } from '../components/WorkoutCard'
 import { Sheet } from '../components/ui'
+import { AvatarCropper } from '../components/AvatarCropper'
 import './Profile.css'
 
 const METRICS = ['Duración', 'Volumen', 'Repeticiones'] as const
@@ -175,21 +176,6 @@ export function Profile() {
   )
 }
 
-/** Reduce la foto a 512 px (JPEG) para que pese poco */
-async function shrinkImage(file: File): Promise<Blob> {
-  const bmp = await createImageBitmap(file)
-  const size = Math.min(bmp.width, bmp.height)
-  const out = Math.min(512, size)
-  const canvas = document.createElement('canvas')
-  canvas.width = out
-  canvas.height = out
-  const ctx = canvas.getContext('2d')!
-  // Recorte cuadrado centrado
-  ctx.drawImage(bmp, (bmp.width - size) / 2, (bmp.height - size) / 2, size, size, 0, 0, out, out)
-  bmp.close()
-  return new Promise((ok, fail) => canvas.toBlob((b) => (b ? ok(b) : fail(new Error('foto'))), 'image/jpeg', 0.85))
-}
-
 const AVATAR_PREFIX = '/storage/v1/object/public/avatars/'
 
 /** Editar foto, nombre, usuario y biografía */
@@ -204,19 +190,10 @@ function EditProfile({
   const [form, setForm] = useState(initial)
   const [photo, setPhoto] = useState<{ blob: Blob; url: string } | null>(null)
   const [removePhoto, setRemovePhoto] = useState(false)
+  const [cropping, setCropping] = useState<File | null>(null)
   const [saving, setSaving] = useState(false)
   const shown = photo?.url ?? (removePhoto ? null : form.avatar_url)
 
-  async function pick(file?: File) {
-    if (!file) return
-    try {
-      const blob = await shrinkImage(file)
-      setPhoto({ blob, url: URL.createObjectURL(blob) })
-      setRemovePhoto(false)
-    } catch {
-      toast('No se pudo leer esa foto')
-    }
-  }
 
   async function save() {
     const username = form.username.trim().toLowerCase()
@@ -256,7 +233,11 @@ function EditProfile({
           <div className="pf-photo-btns">
             <label className="btn">
               Cambiar foto
-              <input type="file" accept="image/*" hidden onChange={(e) => (pick(e.target.files?.[0]), (e.target.value = ''))} />
+              <input type="file" accept="image/*" hidden onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) setCropping(f)
+                  e.target.value = ''
+                }} />
             </label>
             {shown && (
               <button className="btn pf-photo-remove" onClick={() => (setPhoto(null), setRemovePhoto(true))}>
@@ -287,6 +268,17 @@ function EditProfile({
           {saving ? 'Guardando…' : 'Guardar'}
         </button>
       </div>
+      {cropping && (
+        <AvatarCropper
+          file={cropping}
+          onCancel={() => setCropping(null)}
+          onDone={(blob) => {
+            setPhoto({ blob, url: URL.createObjectURL(blob) })
+            setRemovePhoto(false)
+            setCropping(null)
+          }}
+        />
+      )}
     </Sheet>
   )
 }
