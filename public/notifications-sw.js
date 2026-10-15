@@ -3,7 +3,9 @@
 
 self.addEventListener('notificationclick', (event) => {
   const action = event.action // '', 'rest-minus', 'rest-plus', 'rest-skip', 'complete'
-  event.notification.close()
+  // Los botones no cierran la notificación: la app la actualiza en el momento
+  // (así se pueden pulsar varias veces seguidas). Tocarla en sí sí la cierra.
+  if (!action) event.notification.close()
   event.waitUntil(
     (async () => {
       const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })

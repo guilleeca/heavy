@@ -231,7 +231,9 @@ export function ActiveWorkoutProvider({ children }: { children: ReactNode }) {
       void closeWorkoutNotification()
       return
     }
-    notifyTimer.current = window.setTimeout(() => void showWorkoutNotification(active, findExercise, restDone), restDone ? 0 : 400)
+    // Fuera de la app (p. ej. tras pulsar −15/+15) se actualiza al instante
+    const delay = restDone || document.visibilityState === 'hidden' ? 0 : 400
+    notifyTimer.current = window.setTimeout(() => void showWorkoutNotification(active, findExercise, restDone), delay)
     // Durante el descanso, la cuenta atrás de la notificación baja segundo a segundo
     const tick = active.rest
       ? window.setInterval(() => {

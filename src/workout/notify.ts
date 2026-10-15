@@ -36,8 +36,6 @@ export function nextPending(a: ActiveWorkout): [number, number] | null {
   return null
 }
 
-const time = (ms: number) => new Date(ms).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-
 export async function showWorkoutNotification(a: ActiveWorkout, find: (id: string) => Exercise | undefined, restDone = false) {
   const reg = await registration()
   if (!reg) return
@@ -56,7 +54,6 @@ export async function showWorkoutNotification(a: ActiveWorkout, find: (id: strin
   // Cuenta atrás: se vuelve a pintar cada segundo mientras dura el descanso
   const left = resting ? Math.ceil((a.rest!.endsAt - Date.now()) / 1000) : 0
   const title = restDone ? '¡Descanso terminado!' : resting ? `Descanso ${fmtClock(left)}` : a.title
-  const body = resting ? `${nextLine}\nTermina a las ${time(a.rest!.endsAt)}` : nextLine
   const actions = resting
     ? [
         // Android muestra como máximo 2 botones; "Saltar" está dentro de la app
@@ -70,7 +67,7 @@ export async function showWorkoutNotification(a: ActiveWorkout, find: (id: strin
   // Algunas opciones (acciones, vibración…) aún no están en los tipos de TypeScript
   const options: Record<string, unknown> = {
     tag: TAG,
-    body,
+    body: nextLine,
     icon: `${import.meta.env.BASE_URL}pwa-192.png`,
     badge: `${import.meta.env.BASE_URL}pwa-192.png`,
     // Solo suena y vibra al terminar el descanso; las actualizaciones son silenciosas
