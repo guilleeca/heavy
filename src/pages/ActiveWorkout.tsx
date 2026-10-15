@@ -11,6 +11,7 @@ import { ExercisePicker } from '../components/ExercisePicker'
 import { ExerciseThumb, Sheet, SheetItem } from '../components/ui'
 import { SetBadge } from './RoutineEditor'
 import { useNow } from '../workout/useNow'
+import { notificationsSupported } from '../workout/notify'
 import './ActiveWorkout.css'
 
 type Menu =
@@ -100,6 +101,7 @@ export function ActiveWorkout() {
       </div>
 
       <div className="aw-body">
+        <NotifyBanner />
         {a.exercises.length === 0 && (
           <div className="empty">
             <Icon name="dumbbell" size={40} stroke={1.5} />
@@ -357,6 +359,36 @@ export function RestBar() {
           Saltar
         </button>
       </div>
+    </div>
+  )
+}
+
+/** Aviso para activar las notificaciones del entreno (descanso y completar serie) */
+function NotifyBanner() {
+  const [perm, setPerm] = useState(() => (notificationsSupported() ? Notification.permission : 'unsupported'))
+  if (perm === 'granted' || perm === 'unsupported') return null
+  if (perm === 'denied') {
+    return (
+      <p className="aw-notify">
+        Las notificaciones están bloqueadas. Para controlar el descanso desde fuera de la app, actívalas en Ajustes de Android → Aplicaciones → Heavy → Notificaciones.
+      </p>
+    )
+  }
+  return (
+    <div className="aw-notify">
+      <span>Activa las notificaciones para ver el descanso y completar series sin abrir la app.</span>
+      <button
+        className="btn btn-primary"
+        onClick={async () => {
+          try {
+            setPerm(await Notification.requestPermission())
+          } catch {
+            /* sin permiso */
+          }
+        }}
+      >
+        Activar
+      </button>
     </div>
   )
 }

@@ -155,6 +155,7 @@ export function ActiveWorkoutProvider({ children }: { children: ReactNode }) {
   }, [])
 
   // Aviso al terminar el descanso
+  const restEndedAt = useRef(0)
   useEffect(() => {
     if (!active?.rest) return
     const ms = active.rest.endsAt - Date.now()
@@ -162,10 +163,9 @@ export function ActiveWorkoutProvider({ children }: { children: ReactNode }) {
       () => {
         setActive((a) => {
           if (!a) return a
-          const next = { ...a, rest: null }
-          if (document.visibilityState === 'hidden') void showWorkoutNotification(next, findExercise, true)
-          else restDoneAlert()
-          return next
+          restEndedAt.current = Date.now()
+          if (document.visibilityState !== 'hidden') restDoneAlert()
+          return { ...a, rest: null }
         })
       },
       Math.max(0, ms),
@@ -220,25 +220,19 @@ export function ActiveWorkoutProvider({ children }: { children: ReactNode }) {
     [workouts, userId],
   )
 
-  // Notificación con botones mientras la app está en segundo plano
+  // Notificación fija durante todo el entreno (como Hevy): así ya está puesta
+  // cuando sales de la app, sin depender de que el móvil avise a tiempo.
+  const notifyTimer = useRef<number | undefined>(undefined)
   useEffect(() => {
-    const onVisibility = () => {
-      const a = latest.current
-      if (!a) return
-      if (document.visibilityState === 'hidden') void showWorkoutNotification(a, findExercise)
-      else void closeWorkoutNotification()
-    }
-    document.addEventListener('visibilitychange', onVisibility)
-    return () => document.removeEventListener('visibilitychange', onVisibility)
-  }, [findExercise])
-
-  // Si el entreno cambia estando en segundo plano (por un botón), se actualiza la notificación
-  useEffect(() => {
+    // Recién terminado el descanso y fuera de la app: aviso con sonido y vibración
+    const restDone = !!active && !active.rest && Date.now() - restEndedAt.current < 3000 && document.visibilityState === 'hidden'
+    window.clearTimeout(notifyTimer.current)
     if (!active) {
       void closeWorkoutNotification()
       return
     }
-    if (document.visibilityState === 'hidden') void showWorkoutNotification(active, findExercise)
+    notifyTimer.current = window.setTimeout(() => void showWorkoutNotification(active, findExercise, restDone), restDone ? 0 : 400)
+    return () => window.clearTimeout(notifyTimer.current)
   }, [active, findExercise])
 
   // Botones de la notificación (llegan desde el service worker)

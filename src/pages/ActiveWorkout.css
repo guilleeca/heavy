@@ -227,3 +227,25 @@
 .restbar-skip {
   background: rgba(0, 0, 0, 0.2) !important;
 }
+
+.aw-notify {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: var(--accent-soft);
+  color: var(--text);
+  font-size: 14px;
+}
+
+.aw-notify span {
+  flex: 1;
+  min-width: 0;
+}
+
+.aw-notify .btn {
+  flex: none;
+  min-height: 36px;
+}
