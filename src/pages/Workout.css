@@ -1,4 +1,5 @@
-.wk-row {
+.wk-row,
+.wk-folder-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -27,6 +28,7 @@
   font-size: 15px;
   font-weight: 500;
   padding: 4px 0;
+  min-height: 36px;
 }
 
 .wk-folder svg {
@@ -37,8 +39,59 @@
   transform: rotate(-90deg);
 }
 
-.wk-empty {
-  padding: 16px;
+.wk-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px 16px;
   background: var(--surface);
   border-radius: var(--r-md);
+}
+
+.wk-card-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-right: 36px;
+}
+
+.wk-card-main h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.wk-card-main p {
+  margin: 0;
+  color: var(--text-2);
+  font-size: 14px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.wk-card-more {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+.wk-empty-folder {
+  padding: 16px;
+  border-radius: var(--r-md);
+  border: 1px dashed var(--surface-3);
+  color: var(--text-2);
+  text-align: center;
+  font-size: 14px;
+}
+
+.wk-error {
+  margin: 0;
+  padding: 12px;
+  border-radius: var(--r-sm);
+  background: rgba(255, 69, 58, 0.14);
+  color: var(--danger);
+  font-size: 14px;
 }

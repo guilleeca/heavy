@@ -1,0 +1,71 @@
+.cef {
+  min-height: 100dvh;
+  background: var(--bg);
+}
+
+.cef-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 20px max(16px, env(safe-area-inset-right, 0px)) 40px max(16px, env(safe-area-inset-left, 0px));
+}
+
+.cef-name {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  padding: 10px 0;
+  font-size: 20px;
+  font-weight: 600;
+  outline: 0;
+}
+
+.cef-name:focus {
+  border-bottom-color: var(--accent);
+}
+
+.cef-fields {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+
+.cef-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 54px;
+  padding: 0 14px;
+  border-top: 1px solid var(--line);
+  text-align: left;
+  color: var(--text-3);
+}
+
+.cef-field:first-child {
+  border-top: 0;
+}
+
+.cef-label {
+  flex: none;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.cef-value,
+.cef-placeholder {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cef-value {
+  color: var(--accent);
+}

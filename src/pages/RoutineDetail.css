@@ -1,0 +1,168 @@
+.rd-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 16px max(16px, env(safe-area-inset-right, 0px)) 40px max(16px, env(safe-area-inset-left, 0px));
+}
+
+.rd-author {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rd-author div {
+  display: flex;
+  flex-direction: column;
+}
+
+.rd-author span {
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.rd-author b {
+  font-weight: 600;
+}
+
+.avatar {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-weight: 600;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.rd-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.rd-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.rd-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.rd-stats div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rd-stats span {
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.rd-stats b {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.rd-body-map {
+  max-width: 280px;
+  margin: 0 auto;
+}
+
+.rd-muscles {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rd-mrow {
+  display: grid;
+  grid-template-columns: 96px 1fr 32px;
+  gap: 10px;
+  align-items: center;
+  font-size: 14px;
+}
+
+.rd-mrow.head {
+  color: var(--text-2);
+  font-size: 13px;
+}
+
+.rd-mrow span:last-child {
+  text-align: right;
+  color: var(--text-2);
+}
+
+.rd-track {
+  height: 18px;
+}
+
+.rd-track i {
+  display: block;
+  height: 100%;
+  min-width: 8px;
+  border-radius: 5px;
+  background: var(--accent);
+}
+
+.rd-list {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-radius: var(--r-md);
+  padding: 4px 14px;
+}
+
+.rd-ex {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+
+.rd-ex:first-child {
+  border-top: 0;
+}
+
+.rd-ex-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rd-ex-text b {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.rd-ex-text span {
+  font-size: 14px;
+  color: var(--text-2);
+}
+
+.rd-ex-text em {
+  font-style: normal;
+  font-size: 14px;
+  color: var(--text-3);
+}
+
+.rd-timer {
+  vertical-align: -2px;
+}

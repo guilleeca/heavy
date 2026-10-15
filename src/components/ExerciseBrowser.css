@@ -1,0 +1,126 @@
+.exb {
+  display: flex;
+  flex-direction: column;
+}
+
+.exb-tools {
+  position: sticky;
+  top: calc(env(safe-area-inset-top, 0px) + 52px);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px));
+  background: var(--bg);
+}
+
+.exb-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 12px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--text-3);
+}
+
+.exb-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 16px;
+}
+
+.exb-filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.exb-filter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-height: 38px;
+  padding: 0 12px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.exb-filter.on {
+  background: var(--accent);
+}
+
+.exb-group {
+  margin: 14px max(16px, env(safe-area-inset-left, 0px)) 4px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-2);
+}
+
+.exb-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px max(16px, env(safe-area-inset-right, 0px)) 8px max(16px, env(safe-area-inset-left, 0px));
+  text-align: left;
+}
+
+.exb-row:active {
+  background: var(--surface);
+}
+
+.exb-row.selected {
+  background: var(--accent-soft);
+}
+
+.exb-bar {
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 4px;
+  border-radius: 0 3px 3px 0;
+  background: var(--accent);
+}
+
+.exb-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.exb-text b {
+  font-size: 16px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.exb-text span {
+  font-size: 14px;
+  color: var(--text-2);
+}
+
+.exb-chev {
+  color: var(--text-3);
+  flex: none;
+}
+
+.exb-empty {
+  margin: 24px 16px;
+  color: var(--text-2);
+  text-align: center;
+}

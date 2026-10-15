@@ -1,0 +1,120 @@
+.exd-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--line);
+  padding: 0 max(8px, env(safe-area-inset-left, 0px));
+}
+
+.exd-tab {
+  flex: 1;
+  min-height: 44px;
+  color: var(--text-2);
+  font-weight: 500;
+  border-bottom: 2px solid transparent;
+}
+
+.exd-tab[aria-selected='true'] {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.exd-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 16px max(16px, env(safe-area-inset-right, 0px)) 40px max(16px, env(safe-area-inset-left, 0px));
+}
+
+.exd-media {
+  aspect-ratio: 1;
+  max-width: 100%;
+  border-radius: var(--r-md);
+  background: #ffffff;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+
+.exd-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.exd-media-empty {
+  background: var(--surface);
+  color: var(--text-3);
+  gap: 8px;
+  aspect-ratio: 16 / 9;
+}
+
+.exd-name {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  text-wrap: balance;
+}
+
+.exd-facts {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.exd-facts div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.exd-facts dt {
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.exd-facts dd {
+  margin: 0;
+  font-weight: 500;
+}
+
+.exd-legend {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.exd-legend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  margin-right: 4px;
+}
+
+.exd-legend .p {
+  background: var(--muscle);
+}
+
+.exd-legend .s {
+  background: var(--muscle-soft);
+}
+
+.exd-note {
+  margin: 0;
+  color: var(--text-2);
+  font-size: 14px;
+}
+
+.exd-steps {
+  margin: 0;
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  line-height: 1.5;
+}

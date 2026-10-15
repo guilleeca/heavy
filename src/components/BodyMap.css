@@ -1,0 +1,19 @@
+.bodymap {
+  --body-skin: #3e4046;
+  --body-muscle: #8a8d95;
+  --body-gap: #2b2c31;
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.bm-skin {
+  fill: var(--body-skin);
+}
+
+.bm-muscle {
+  stroke: var(--body-gap);
+  stroke-width: 0.7;
+  stroke-linejoin: round;
+  transition: fill 0.2s;
+}

@@ -1,13 +1,15 @@
+import { toast } from '../lib/toast'
 import { useState } from 'react'
+import { useNavigate } from 'react-router'
 import { Icon, type IconName } from '../components/Icon'
 import { useAuth } from '../auth/context'
 import { supabase } from '../lib/supabase'
 import './Profile.css'
 
 const METRICS = ['Duración', 'Volumen', 'Repeticiones'] as const
-const PANEL: { label: string; icon: IconName }[] = [
+const PANEL: { label: string; icon: IconName; to?: string }[] = [
   { label: 'Estadísticas', icon: 'chart' },
-  { label: 'Ejercicios', icon: 'dumbbell' },
+  { label: 'Ejercicios', icon: 'dumbbell', to: '/ejercicios' },
   { label: 'Medidas', icon: 'ruler' },
   { label: 'Calendario', icon: 'calendar' },
 ]
@@ -16,6 +18,7 @@ const PANEL: { label: string; icon: IconName }[] = [
 export function Profile() {
   const [metric, setMetric] = useState<(typeof METRICS)[number]>('Duración')
   const [menu, setMenu] = useState(false)
+  const navigate = useNavigate()
   const { profile, session } = useAuth()
   const name = profile?.full_name || session?.user.email?.split('@')[0] || 'Atleta'
   const handle = profile?.username || session?.user.email?.split('@')[0] || ''
@@ -78,7 +81,7 @@ export function Profile() {
           <h2 className="section-title">Panel</h2>
           <div className="pf-panel">
             {PANEL.map((p) => (
-              <button key={p.label} className="btn pf-panel-btn">
+              <button key={p.label} className="btn pf-panel-btn" onClick={() => (p.to ? navigate(p.to) : toast('Disponible cuando registres entrenos'))}>
                 <Icon name={p.icon} size={20} />
                 {p.label}
               </button>

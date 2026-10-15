@@ -30,7 +30,20 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,svg,woff2}'],
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         navigateFallback: '/heavy/index.html',
+        runtimeCaching: [
+          {
+            // Animaciones de ExerciseDB: se guardan para usarlas sin conexión
+            urlPattern: ({ url }) => url.hostname === 'static.exercisedb.dev',
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'exercise-gifs',
+              expiration: { maxEntries: 600, maxAgeSeconds: 60 * 60 * 24 * 60 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
       },
     }),
   ],
