@@ -1,0 +1,85 @@
+.login {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: calc(env(safe-area-inset-top, 0px) + 18vh) max(24px, env(safe-area-inset-right, 0px))
+    calc(env(safe-area-inset-bottom, 0px) + 32px) max(24px, env(safe-area-inset-left, 0px));
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.login-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.login-brand img {
+  border-radius: 20px;
+}
+
+.login-brand h1 {
+  margin: 8px 0 0;
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.login-brand p {
+  margin: 0;
+  color: var(--text-2);
+}
+
+.login-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.login-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 52px;
+  border-radius: var(--r-md);
+  background: #ffffff;
+  color: #1f1f1f;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.login-google:disabled {
+  opacity: 0.7;
+}
+
+.login-note {
+  margin: 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-3);
+}
+
+.login-error {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  background: rgba(255, 69, 58, 0.14);
+  color: var(--danger);
+  font-size: 14px;
+  text-align: center;
+}
+
+.splash {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+}
+
+.splash img {
+  border-radius: 20px;
+  opacity: 0.9;
+}

@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { Icon, type IconName } from '../components/Icon'
+import { useAuth } from '../auth/context'
+import { supabase } from '../lib/supabase'
 import './Profile.css'
 
 const METRICS = ['Duración', 'Volumen', 'Repeticiones'] as const
@@ -13,22 +15,37 @@ const PANEL: { label: string; icon: IconName }[] = [
 /** Perfil: datos del usuario, gráfica semanal y accesos a estadísticas. */
 export function Profile() {
   const [metric, setMetric] = useState<(typeof METRICS)[number]>('Duración')
+  const [menu, setMenu] = useState(false)
+  const { profile, session } = useAuth()
+  const name = profile?.full_name || session?.user.email?.split('@')[0] || 'Atleta'
+  const handle = profile?.username || session?.user.email?.split('@')[0] || ''
+  const avatar = profile?.avatar_url
   return (
     <>
       <header className="screen-header">
-        <h1>guilleeca</h1>
+        <h1>{handle}</h1>
         <button className="header-btn" aria-label="Compartir perfil">
           <Icon name="share" />
         </button>
-        <button className="header-btn" aria-label="Ajustes">
+        <button className="header-btn" aria-label="Ajustes" aria-expanded={menu} onClick={() => setMenu(!menu)}>
           <Icon name="gear" />
         </button>
+        {menu && (
+          <div className="pf-menu" role="menu">
+            <p>{session?.user.email}</p>
+            <button role="menuitem" onClick={() => supabase.auth.signOut()}>
+              Cerrar sesión
+            </button>
+          </div>
+        )}
       </header>
       <div className="screen-body">
         <section className="pf-head">
-          <div className="pf-avatar" aria-hidden="true">G</div>
+          <div className="pf-avatar" aria-hidden="true">
+            {avatar ? <img src={avatar} alt="" referrerPolicy="no-referrer" /> : name.charAt(0).toUpperCase()}
+          </div>
           <div className="pf-info">
-            <strong>Guillermo</strong>
+            <strong>{name}</strong>
             <div className="pf-stats">
               <div><span>Entrenamientos</span><b className="tnum">0</b></div>
               <div><span>Seguidores</span><b className="tnum">0</b></div>
