@@ -8,6 +8,9 @@ export type FinishInput = {
   description: string
   visibility: 'everyone' | 'private'
   photos: File[]
+  /** Hora de inicio y duración corregidas a mano (si no, las reales) */
+  startedAt?: number
+  durationS?: number
 }
 
 export type ActiveWorkoutApi = {

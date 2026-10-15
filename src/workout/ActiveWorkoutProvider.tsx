@@ -333,7 +333,8 @@ export function ActiveWorkoutProvider({ children }: { children: ReactNode }) {
             }
           })
           .filter((e) => e.sets.length > 0)
-        const endedAt = Date.now()
+        const startedAt = input.startedAt ?? active.startedAt
+        const endedAt = input.durationS != null ? startedAt + input.durationS * 1000 : Date.now()
         const id = active.id
         // Fotos: se suben primero a Storage
         const photos: string[] = []
@@ -346,11 +347,11 @@ export function ActiveWorkoutProvider({ children }: { children: ReactNode }) {
         const { error } = await supabase.from('workouts').insert({
           id,
           routine_id: active.routineId,
-          title: input.title.trim() || defaultTitle(new Date(active.startedAt)),
+          title: input.title.trim() || defaultTitle(new Date(startedAt)),
           description: input.description.trim(),
-          started_at: new Date(active.startedAt).toISOString(),
+          started_at: new Date(startedAt).toISOString(),
           ended_at: new Date(endedAt).toISOString(),
-          duration_s: Math.round((endedAt - active.startedAt) / 1000),
+          duration_s: Math.max(0, Math.round((endedAt - startedAt) / 1000)),
           volume_kg: workoutVolume(exercises, findExercise),
           sets_count: exercises.reduce((a, e) => a + e.sets.length, 0),
           exercises,

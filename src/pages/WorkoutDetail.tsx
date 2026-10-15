@@ -184,6 +184,9 @@ export function WorkoutDetail() {
       </div>
 
       <Sheet open={menu === 'main'} onClose={() => setMenu(null)} title={w.title}>
+        <SheetItem icon={<Icon name="edit" size={20} />} onClick={() => navigate(`/entreno/${w.id}/editar`)}>
+          Editar entreno
+        </SheetItem>
         <SheetItem danger icon={<Icon name="trash" size={20} />} onClick={() => setMenu('delete')}>
           Eliminar entreno
         </SheetItem>

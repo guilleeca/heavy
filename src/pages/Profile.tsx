@@ -89,9 +89,9 @@ export function Profile() {
       </header>
       <div className="screen-body">
         <section className="pf-head">
-          <div className="pf-avatar" aria-hidden="true">
+          <button className="pf-avatar" aria-label="Cambiar foto de perfil" onClick={() => setEditing(true)}>
             {avatar ? <img src={avatar} alt="" referrerPolicy="no-referrer" /> : name.charAt(0).toUpperCase()}
-          </div>
+          </button>
           <div className="pf-info">
             <strong>{name}</strong>
             <div className="pf-stats">
@@ -170,28 +170,80 @@ export function Profile() {
           )}
         </section>
       </div>
-      {editing && <EditProfile onClose={() => setEditing(false)} initial={{ full_name: name, username: profile?.username ?? '', bio: profile?.bio ?? '' }} />}
+      {editing && <EditProfile onClose={() => setEditing(false)} initial={{ full_name: name, username: profile?.username ?? '', bio: profile?.bio ?? '', avatar_url: profile?.avatar_url ?? null }} />}
     </>
   )
 }
 
-/** Editar nombre, usuario y biografía */
-function EditProfile({ initial, onClose }: { initial: { full_name: string; username: string; bio: string }; onClose: () => void }) {
+/** Reduce la foto a 512 px (JPEG) para que pese poco */
+async function shrinkImage(file: File): Promise<Blob> {
+  const bmp = await createImageBitmap(file)
+  const size = Math.min(bmp.width, bmp.height)
+  const out = Math.min(512, size)
+  const canvas = document.createElement('canvas')
+  canvas.width = out
+  canvas.height = out
+  const ctx = canvas.getContext('2d')!
+  // Recorte cuadrado centrado
+  ctx.drawImage(bmp, (bmp.width - size) / 2, (bmp.height - size) / 2, size, size, 0, 0, out, out)
+  bmp.close()
+  return new Promise((ok, fail) => canvas.toBlob((b) => (b ? ok(b) : fail(new Error('foto'))), 'image/jpeg', 0.85))
+}
+
+const AVATAR_PREFIX = '/storage/v1/object/public/avatars/'
+
+/** Editar foto, nombre, usuario y biografía */
+function EditProfile({
+  initial,
+  onClose,
+}: {
+  initial: { full_name: string; username: string; bio: string; avatar_url: string | null }
+  onClose: () => void
+}) {
   const { userId, refresh } = useData()
   const [form, setForm] = useState(initial)
+  const [photo, setPhoto] = useState<{ blob: Blob; url: string } | null>(null)
+  const [removePhoto, setRemovePhoto] = useState(false)
   const [saving, setSaving] = useState(false)
+  const shown = photo?.url ?? (removePhoto ? null : form.avatar_url)
+
+  async function pick(file?: File) {
+    if (!file) return
+    try {
+      const blob = await shrinkImage(file)
+      setPhoto({ blob, url: URL.createObjectURL(blob) })
+      setRemovePhoto(false)
+    } catch {
+      toast('No se pudo leer esa foto')
+    }
+  }
 
   async function save() {
     const username = form.username.trim().toLowerCase()
     if (!form.full_name.trim()) return toast('Escribe tu nombre')
     if (username && !/^[a-z0-9._]{3,30}$/.test(username)) return toast('Usuario: 3-30 letras, números, punto o guion bajo')
     setSaving(true)
+    let avatar_url = removePhoto ? null : initial.avatar_url
+    if (photo) {
+      const path = `${userId}/${Date.now()}.jpg`
+      const up = await supabase.storage.from('avatars').upload(path, photo.blob, { contentType: 'image/jpeg' })
+      if (up.error) {
+        setSaving(false)
+        return toast('No se pudo subir la foto')
+      }
+      avatar_url = supabase.storage.from('avatars').getPublicUrl(path).data.publicUrl
+    }
     const { error } = await supabase
       .from('profiles')
-      .update({ full_name: form.full_name.trim(), username: username || null, bio: form.bio.trim() })
+      .update({ full_name: form.full_name.trim(), username: username || null, bio: form.bio.trim(), avatar_url })
       .eq('id', userId)
     setSaving(false)
     if (error) return toast(error.code === '23505' ? 'Ese nombre de usuario ya existe' : 'No se pudo guardar el perfil')
+    // La foto anterior subida a Heavy ya no hace falta
+    const old = initial.avatar_url
+    if (old && old !== avatar_url && old.includes(AVATAR_PREFIX)) {
+      await supabase.storage.from('avatars').remove([decodeURIComponent(old.split(AVATAR_PREFIX)[1])])
+    }
     await refresh()
     onClose()
   }
@@ -199,6 +251,20 @@ function EditProfile({ initial, onClose }: { initial: { full_name: string; usern
   return (
     <Sheet open onClose={onClose} title="Editar perfil">
       <div className="pf-form">
+        <div className="pf-photo">
+          <div className="pf-avatar">{shown ? <img src={shown} alt="" referrerPolicy="no-referrer" /> : form.full_name.charAt(0).toUpperCase()}</div>
+          <div className="pf-photo-btns">
+            <label className="btn">
+              Cambiar foto
+              <input type="file" accept="image/*" hidden onChange={(e) => (pick(e.target.files?.[0]), (e.target.value = ''))} />
+            </label>
+            {shown && (
+              <button className="btn pf-photo-remove" onClick={() => (setPhoto(null), setRemovePhoto(true))}>
+                Quitar
+              </button>
+            )}
+          </div>
+        </div>
         <label>
           <span>Nombre</span>
           <input value={form.full_name} maxLength={60} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />

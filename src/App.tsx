@@ -21,6 +21,7 @@ import { ActiveWorkoutProvider } from './workout/ActiveWorkoutProvider'
 import { ActiveWorkout } from './pages/ActiveWorkout'
 import { FinishWorkout } from './pages/FinishWorkout'
 import { WorkoutDetail } from './pages/WorkoutDetail'
+import { EditWorkout } from './pages/EditWorkout'
 import { LiveView } from './pages/LiveView'
 
 // Rutas con "#" (p. ej. .../heavy/#/perfil): GitHub Pages solo sirve
@@ -50,6 +51,7 @@ const router = createHashRouter([
   { path: '/entreno', element: <ActiveWorkout /> },
   { path: '/entreno/guardar', element: <FinishWorkout /> },
   { path: '/entreno/:id', element: <WorkoutDetail /> },
+  { path: '/entreno/:id/editar', element: <EditWorkout /> },
   { path: '/en-directo/:userId', element: <LiveView /> },
 ])
 

@@ -107,3 +107,8 @@
   background: var(--surface);
   border-radius: var(--r-md);
 }
+
+.fw-edit-when {
+  color: var(--accent);
+  font-weight: 600;
+}

@@ -7,6 +7,7 @@ import { useNow } from '../workout/useNow'
 import { Icon } from '../components/Icon'
 import { PageHeader, Sheet, SheetItem } from '../components/ui'
 import { toast } from '../lib/toast'
+import { WhenFields } from '../components/WhenFields'
 import './FinishWorkout.css'
 import './RoutineEditor.css'
 import './ActiveWorkout.css'
@@ -25,6 +26,8 @@ export function FinishWorkout() {
   const [photos, setPhotos] = useState<File[]>([])
   const [sheet, setSheet] = useState<'visibility' | 'discard' | null>(null)
   const [saving, setSaving] = useState(false)
+  // Hora y duración corregidas a mano (null = las reales)
+  const [when, setWhen] = useState<{ startedAt: number; durationS: number } | null>(null)
   const previews = useMemo(() => photos.map((f) => URL.createObjectURL(f)), [photos])
 
   if (!a) {
@@ -46,7 +49,7 @@ export function FinishWorkout() {
   async function save() {
     if (!sets) return
     setSaving(true)
-    const id = await w.finish({ title, description, visibility, photos })
+    const id = await w.finish({ title, description, visibility, photos, ...(when ?? {}) })
     setSaving(false)
     if (!id) return toast('No se pudo guardar el entreno. Revisa la conexión e inténtalo de nuevo.')
     navigate(`/entreno/${id}?nuevo=1`, { replace: true })
@@ -75,7 +78,7 @@ export function FinishWorkout() {
         <div className="fw-stats">
           <div>
             <span>Duración</span>
-            <b className="tnum">{fmtDuration((now - a.startedAt) / 1000)}</b>
+            <b className="tnum">{fmtDuration(when ? when.durationS : (now - a.startedAt) / 1000)}</b>
           </div>
           <div>
             <span>Volumen</span>
@@ -86,10 +89,17 @@ export function FinishWorkout() {
             <b className="tnum">{sets}</b>
           </div>
         </div>
-        <p className="fw-when">
-          Empezado el {new Date(a.startedAt).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })} a las{' '}
-          {new Date(a.startedAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-        </p>
+        {when ? (
+          <WhenFields startedAt={when.startedAt} durationS={when.durationS} onChange={setWhen} />
+        ) : (
+          <p className="fw-when">
+            Empezado el {new Date(a.startedAt).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })} a las{' '}
+            {new Date(a.startedAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} ·{' '}
+            <button className="fw-edit-when" onClick={() => setWhen({ startedAt: a.startedAt, durationS: Math.round((now - a.startedAt) / 60000) * 60 })}>
+              Editar hora y duración
+            </button>
+          </p>
+        )}
 
         {!sets && <p className="fw-warn">Marca con ✓ al menos una serie para poder guardar el entreno.</p>}
 

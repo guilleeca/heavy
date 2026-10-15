@@ -348,7 +348,7 @@ export function SetBadge({ type, n }: { type: SetType; n: number }) {
   return <span className={`set-badge ${type}`}>{label}</span>
 }
 
-function SetTable({
+export function SetTable({
   type,
   sets,
   onChange,
@@ -356,7 +356,7 @@ function SetTable({
   idPrefix,
 }: {
   type: ExerciseType
-  sets: KSet[]
+  sets: (RoutineSet & { _k: string })[]
   onChange: (i: number, patch: Partial<RoutineSet>) => void
   onSetMenu: (i: number) => void
   idPrefix: string
