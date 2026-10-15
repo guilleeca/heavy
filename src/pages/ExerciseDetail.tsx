@@ -1,5 +1,5 @@
 import { toast } from '../lib/toast'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { useData } from '../data/context'
 import { supabase } from '../lib/supabase'
@@ -7,19 +7,27 @@ import { EQUIPMENT_LABEL, MUSCLE_LABEL, TYPE_LABEL, gifUrl } from '../lib/exerci
 import { BodyMap } from '../components/BodyMap'
 import { PageHeader, Sheet, Spinner} from '../components/ui'
 import { Icon } from '../components/Icon'
+import { ExerciseHistory, ExerciseProgress } from '../components/ExerciseProgress'
+import { exerciseSessions } from '../lib/stats'
 import './ExerciseDetail.css'
 
-type Tab = 'resumen' | 'instrucciones'
+type Tab = 'resumen' | 'historial' | 'instrucciones'
+const TABS: [Tab, string][] = [
+  ['resumen', 'Resumen'],
+  ['historial', 'Historial'],
+  ['instrucciones', 'Instrucciones'],
+]
 
 /** Ficha del ejercicio: animación, músculos y cómo se hace. */
 export function ExerciseDetail() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
-  const { findExercise, ready, userId, refresh, routines } = useData()
+  const { findExercise, ready, userId, refresh, routines, workouts } = useData()
   const [tab, setTab] = useState<Tab>('resumen')
   const [steps, setSteps] = useState<string[] | null>(null)
   const [confirm, setConfirm] = useState(false)
   const ex = findExercise(id)
+  const sessions = useMemo(() => (ex ? exerciseSessions(workouts, userId, ex.id, ex.type) : []), [ex, workouts, userId])
 
   // Instrucciones paso a paso desde ExerciseDB (solo ejercicios de la biblioteca)
   useEffect(() => {
@@ -66,14 +74,18 @@ export function ExerciseDetail() {
         }
       />
       <div className="exd-tabs" role="tablist">
-        {(['resumen', 'instrucciones'] as Tab[]).map((t) => (
+        {TABS.map(([t, label]) => (
           <button key={t} role="tab" aria-selected={tab === t} className="exd-tab" onClick={() => setTab(t)}>
-            {t === 'resumen' ? 'Resumen' : 'Instrucciones'}
+            {label}
           </button>
         ))}
       </div>
 
       <div className="exd-body">
+        {tab === 'historial' ? (
+          <ExerciseHistory exercise={ex} sessions={sessions} />
+        ) : (
+          <>
         {src ? (
           <div className="exd-media">
             <img src={src} alt={`Cómo se hace: ${ex.name}`} />
@@ -120,7 +132,11 @@ export function ExerciseDetail() {
                 </span>
               </div>
             </div>
-            <p className="exd-note">El historial y los récords de este ejercicio aparecerán cuando registres entrenos.</p>
+            {sessions.length ? (
+              <ExerciseProgress exercise={ex} sessions={sessions} />
+            ) : (
+              <p className="exd-note">El progreso y los récords de este ejercicio aparecerán cuando lo hagas en un entreno.</p>
+            )}
           </>
         ) : ex.custom ? (
           <p className="exd-note">Los ejercicios personalizados no tienen instrucciones.</p>
@@ -134,6 +150,8 @@ export function ExerciseDetail() {
           </ol>
         ) : (
           <p className="exd-note">No se pudieron cargar las instrucciones. Revisa la conexión.</p>
+        )}
+          </>
         )}
       </div>
 

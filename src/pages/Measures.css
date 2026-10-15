@@ -1,0 +1,105 @@
+.ms {
+  min-height: 100dvh;
+}
+
+.ms-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 8px max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 32px) max(16px, env(safe-area-inset-left, 0px));
+}
+
+.ms-chips {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.ms-chips button {
+  flex: none;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.ms-chips button[aria-pressed='true'] {
+  background: var(--accent);
+  color: #fff;
+}
+
+.ms-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.ms-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.ms-row b {
+  font-weight: 600;
+}
+
+.ms-row span {
+  font-size: 14px;
+  color: var(--text-2);
+}
+
+.ms-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 75dvh;
+  overflow: auto;
+  padding-bottom: 4px;
+}
+
+.ms-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 14px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+}
+
+.ms-field span {
+  flex: 1;
+  font-weight: 500;
+}
+
+.ms-field input {
+  width: 110px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 16px;
+  text-align: right;
+  outline: 0;
+  color-scheme: dark;
+}
+
+.ms-field small {
+  width: 22px;
+  color: var(--text-2);
+}
+
+.ms-form .btn-primary {
+  margin-top: 8px;
+}
+
+.ms-delete {
+  color: var(--danger);
+}
