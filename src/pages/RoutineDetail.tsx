@@ -9,12 +9,14 @@ import { BodyMap } from '../components/BodyMap'
 import { Icon } from '../components/Icon'
 import { ExerciseThumb, PageHeader, Spinner} from '../components/ui'
 import { RoutineMenu } from '../components/RoutineMenu'
+import { useStartWorkout } from '../workout/useStartWorkout'
 import './RoutineDetail.css'
 
 /** Vista de una rutina con su resumen, como en Hevy. */
 export function RoutineDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const startWorkout = useStartWorkout()
   const { routines, findExercise, profiles, userId, ready, refresh } = useData()
   const [menu, setMenu] = useState(false)
   const [copying, setCopying] = useState(false)
@@ -76,7 +78,7 @@ export function RoutineDetail() {
 
         {mine ? (
           <div className="rd-actions">
-            <button className="btn btn-primary btn-block" onClick={() => toast('El entreno en directo llega en el siguiente paso')}>
+            <button className="btn btn-primary btn-block" onClick={() => startWorkout(r)}>
               <Icon name="play" size={18} />
               Empezar rutina
             </button>

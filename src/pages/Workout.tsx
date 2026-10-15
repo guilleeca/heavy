@@ -6,12 +6,14 @@ import { supabase } from '../lib/supabase'
 import type { Folder, Routine } from '../lib/routines'
 import { Icon } from '../components/Icon'
 import { RoutineMenu } from '../components/RoutineMenu'
+import { useStartWorkout } from '../workout/useStartWorkout'
 import { Sheet, SheetItem, Spinner} from '../components/ui'
 import './Workout.css'
 
 /** Entrenamiento: empezar un entreno y gestionar rutinas y carpetas. */
 export function Workout() {
   const navigate = useNavigate()
+  const startWorkout = useStartWorkout()
   const { routines, folders, userId, ready, findExercise, refresh, error } = useData()
   const [closed, setClosed] = useState<Record<string, boolean>>(() => {
     try {
@@ -68,7 +70,7 @@ export function Workout() {
       <button className="header-btn wk-card-more" aria-label={`Opciones de ${r.title}`} onClick={() => setRoutineMenu(r)}>
         <Icon name="more" />
       </button>
-      <button className="btn btn-primary btn-block" onClick={() => toast('El entreno en directo llega en el siguiente paso')}>
+      <button className="btn btn-primary btn-block" onClick={() => startWorkout(r)}>
         Empezar rutina
       </button>
     </article>
@@ -106,7 +108,7 @@ export function Workout() {
       <div className="screen-body">
         <section className="stack">
           <h2 className="section-title">Inicio rápido</h2>
-          <button className="btn btn-block wk-start" onClick={() => toast('El entreno en directo llega en el siguiente paso')}>
+          <button className="btn btn-block wk-start" onClick={() => startWorkout()}>
             <Icon name="plus" size={20} stroke={2.2} />
             Empezar entrenamiento vacío
           </button>

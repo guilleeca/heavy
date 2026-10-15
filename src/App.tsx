@@ -12,6 +12,11 @@ import { RoutineDetail } from './pages/RoutineDetail'
 import { RoutineEditor } from './pages/RoutineEditor'
 import { Explore } from './pages/Explore'
 import { DataProvider } from './data/DataProvider'
+import { ActiveWorkoutProvider } from './workout/ActiveWorkoutProvider'
+import { ActiveWorkout } from './pages/ActiveWorkout'
+import { FinishWorkout } from './pages/FinishWorkout'
+import { WorkoutDetail } from './pages/WorkoutDetail'
+import { LiveView } from './pages/LiveView'
 
 // Rutas con "#" (p. ej. .../heavy/#/perfil): GitHub Pages solo sirve
 // archivos estáticos y así recargar cualquier pantalla nunca da 404.
@@ -33,6 +38,10 @@ const router = createHashRouter([
   { path: '/rutina/:id', element: <RoutineDetail /> },
   { path: '/rutina/:id/editar', element: <RoutineEditor /> },
   { path: '/explorar', element: <Explore /> },
+  { path: '/entreno', element: <ActiveWorkout /> },
+  { path: '/entreno/guardar', element: <FinishWorkout /> },
+  { path: '/entreno/:id', element: <WorkoutDetail /> },
+  { path: '/en-directo/:userId', element: <LiveView /> },
 ])
 
 /** Sin sesión se muestra el login; con sesión, la app. */
@@ -47,7 +56,9 @@ export function App() {
   }
   return session ? (
     <DataProvider>
-      <RouterProvider router={router} />
+      <ActiveWorkoutProvider>
+        <RouterProvider router={router} />
+      </ActiveWorkoutProvider>
     </DataProvider>
   ) : (
     <Login />

@@ -46,7 +46,7 @@ src/data/exercises.json  biblioteca de ejercicios (generada desde ExerciseDB)
 2. ~~Esqueleto: tema, navegación e instalación en el móvil~~
 3. ~~Supabase: cuentas para los dos y base de datos~~
 4. ~~Ejercicios y rutinas (carpetas, notas por ejercicio)~~
-5. Entreno en directo
+5. ~~Entreno en directo (y ver el del otro en tiempo real)~~
 6. Rutas y carreras: importar GPX, mapa, altitud y parciales
 7. Inicio: canal con me gusta y comentarios
 8. Perfil: estadísticas, calendario y récords

@@ -128,8 +128,21 @@
 
 .pf-bars i {
   height: 3px;
-  border-radius: 2px 2px 0 0;
-  background: var(--surface-3);
+  border-radius: 3px 3px 0 0;
+  background: var(--accent);
+  opacity: 0.55;
+}
+
+.pf-bars i.now {
+  opacity: 1;
+}
+
+.pf-axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: -8px;
+  font-size: 12px;
+  color: var(--text-3);
 }
 
 .pf-chips {
