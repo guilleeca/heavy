@@ -105,3 +105,13 @@
   font-size: 13px;
   color: var(--text-3);
 }
+
+.ns-test {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  font-size: 13px;
+  color: var(--text-2);
+  overflow-wrap: anywhere;
+}

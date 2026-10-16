@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useData } from '../data/context'
 import { supabase } from '../lib/supabase'
 import { toast } from '../lib/toast'
-import { DEFAULT_PREFS, disablePush, enablePush, pushEnabledHere, pushSupported, type NotifyPrefs } from '../lib/push'
+import { DEFAULT_PREFS, disablePush, enablePush, pushEnabledHere, pushSupported, testPush, type NotifyPrefs } from '../lib/push'
 import { PageHeader, Spinner } from '../components/ui'
 import './NotificationSettings.css'
 
@@ -19,6 +19,7 @@ export function NotificationSettings() {
   const [here, setHere] = useState<boolean | null>(null)
   const [prefs, setPrefs] = useState<NotifyPrefs | null>(null)
   const [busy, setBusy] = useState(false)
+  const [test, setTest] = useState<string | null>(null)
 
   useEffect(() => {
     pushEnabledHere().then(setHere)
@@ -77,6 +78,22 @@ export function NotificationSettings() {
             </button>
           )}
         </section>
+
+        {here && (
+          <section className="stack">
+            <button
+              className="btn btn-block"
+              disabled={busy}
+              onClick={async () => {
+                setTest('Enviando…')
+                setTest(await testPush())
+              }}
+            >
+              Enviar notificación de prueba
+            </button>
+            {test && <p className="ns-test">{test}</p>}
+          </section>
+        )}
 
         <section className="stack">
           <h2 className="section-title">Avisarme cuando tu hermano…</h2>

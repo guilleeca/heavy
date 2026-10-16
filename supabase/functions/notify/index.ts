@@ -12,17 +12,21 @@ import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-region',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
-const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status, headers: { ...CORS, 'Content-Type': 'application/json' } })
+// Cada respuesta queda en Supabase → notify → Logs para poder ver qué ha pasado
+const json = (data: unknown, status = 200) => {
+  console.log(JSON.stringify({ status, ...(data as object) }))
+  return new Response(JSON.stringify(data), { status, headers: { ...CORS, 'Content-Type': 'application/json' } })
+}
 
-type Kind = 'live' | 'workout' | 'like' | 'comment'
+type Kind = 'live' | 'workout' | 'like' | 'comment' | 'test'
 type Message = { title: string; body: string; url: string; tag: string }
 
-const PREF: Record<Kind, string> = { live: 'live', workout: 'workouts', like: 'likes', comment: 'comments' }
+const PREF: Record<Kind, string> = { live: 'live', workout: 'workouts', like: 'likes', comment: 'comments', test: 'test' }
 const first = (name?: string | null) => (name || 'Tu hermano').split(' ')[0]
 const KIND_TEXT: Record<string, string> = { run: 'una carrera', hike: 'una ruta de senderismo', walk: 'una caminata', ride: 'una salida en bici' }
-
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
@@ -41,12 +45,19 @@ Deno.serve(async (req) => {
     if (!caller) return json({ error: 'Sin sesión' }, 401)
 
     const { type, id } = (await req.json()) as { type: Kind; id: string }
+    console.log(JSON.stringify({ llamada: type, id, caller }))
     const { data: me } = await admin.from('profiles').select('full_name').eq('id', caller).single()
     const name = first(me?.full_name)
 
     let message: Message | null = null
     let recipients: string[] = []
     const others = async () => ((await admin.from('profiles').select('id').neq('id', caller)).data ?? []).map((p) => p.id as string)
+
+    // Prueba desde Ajustes → Notificaciones: se avisa a uno mismo
+    if (type === 'test') {
+      recipients = [caller]
+      message = { title: 'Heavy', body: 'Las notificaciones funcionan ✅', url: '#/', tag: 'test' }
+    }
 
     if (type === 'live') {
       const { data: live } = await admin.from('live_sessions').select('title').eq('user_id', caller).maybeSingle()
@@ -82,7 +93,8 @@ Deno.serve(async (req) => {
     if (type === 'like') {
       const { data: like } = await admin.from('workout_likes').select('workout_id').eq('workout_id', id).eq('user_id', caller).maybeSingle()
       const { data: w } = await admin.from('workouts').select('id, user_id, title').eq('id', id).maybeSingle()
-      if (!like || !w || w.user_id === caller) return json({ sent: 0 })
+      if (!like || !w) return json({ sent: 0, reason: 'no se encuentra el me gusta o el entreno' })
+      if (w.user_id === caller) return json({ sent: 0, reason: 'el entreno es tuyo' })
       recipients = [w.user_id]
       message = { title: `A ${name} le gusta tu entreno`, body: w.title, url: `#/entreno/${w.id}`, tag: `like-${w.id}-${caller}` }
     }
@@ -106,15 +118,17 @@ Deno.serve(async (req) => {
       if (!recipients.some(yours)) message.title = `${name} ha respondido en «${w.title}»`
     }
 
-    if (!message || !recipients.length) return json({ sent: 0 })
+    if (!message || !recipients.length) return json({ sent: 0, reason: 'nada que avisar' })
 
     // Preferencias de cada uno
     const { data: prefs } = await admin.from('profiles').select('id, notify').in('id', recipients)
     const wanted = (prefs ?? []).filter((p) => (p.notify ?? {})[PREF[type]] !== false).map((p) => p.id as string)
-    if (!wanted.length) return json({ sent: 0 })
+    if (!wanted.length) return json({ sent: 0, reason: 'el otro tiene este aviso desactivado' })
 
     const { data: subs } = await admin.from('push_subscriptions').select('endpoint, p256dh, auth').in('user_id', wanted)
+    if (!subs?.length) return json({ sent: 0, reason: 'el destinatario no ha activado las notificaciones en ningún móvil' })
     let sent = 0
+    const errors: string[] = []
     await Promise.all(
       (subs ?? []).map(async (s) => {
         try {
@@ -123,11 +137,12 @@ Deno.serve(async (req) => {
         } catch (e) {
           // Suscripción caducada (app desinstalada, permiso quitado…): se borra
           const status = (e as { statusCode?: number }).statusCode
+          errors.push(`${status ?? ''} ${(e as { body?: string; message?: string }).body ?? (e as Error).message}`.trim())
           if (status === 404 || status === 410) await admin.from('push_subscriptions').delete().eq('endpoint', s.endpoint)
         }
       }),
     )
-    return json({ sent })
+    return json({ sent, errors })
   } catch (e) {
     return json({ error: String(e) }, 500)
   }

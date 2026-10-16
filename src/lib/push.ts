@@ -57,3 +57,20 @@ export async function disablePush() {
 export function sendPush(type: PushKind, id: string) {
   void supabase.functions.invoke('notify', { body: { type, id } }).catch(() => {})
 }
+
+/** Notificación de prueba a uno mismo; devuelve qué ha pasado */
+export async function testPush(): Promise<string> {
+  const { data, error } = await supabase.functions.invoke('notify', { body: { type: 'test', id: '' } })
+  if (error) {
+    let detail = ''
+    try {
+      detail = JSON.stringify(await (error as { context?: Response }).context?.json())
+    } catch {
+      /* sin detalle */
+    }
+    return `La función notify falló ${detail}`.trim()
+  }
+  const r = data as { sent?: number; reason?: string; errors?: string[] }
+  if (r.sent) return `Enviada a ${r.sent} móvil(es). Debería llegarte ya.`
+  return r.reason ?? `No se pudo enviar: ${(r.errors ?? []).join(' | ') || 'sin detalle'}`
+}
