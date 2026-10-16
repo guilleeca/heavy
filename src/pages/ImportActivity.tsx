@@ -5,6 +5,8 @@ import { supabase } from '../lib/supabase'
 import { toast } from '../lib/toast'
 import {
   activityTitle,
+  elevationLoss,
+  estimateSeconds,
   fmtKm,
   fmtPace,
   KIND_EMOJI,
@@ -45,6 +47,9 @@ export function ImportActivity() {
   const [photos, setPhotos] = useState<File[]>([])
   const [sheet, setSheet] = useState<'visibility' | null>(null)
   const [saving, setSaving] = useState(false)
+  const [params, setParams] = useSearchParams()
+  // Actividad hecha (sale en Inicio) o ruta para seguir (va a la biblioteca de rutas)
+  const [mode, setMode] = useState<'activity' | 'route'>(params.get('modo') === 'ruta' ? 'route' : 'activity')
   const crop = useCropQueue((f) => setPhotos((p) => [...p, f].slice(0, 6)))
   const previews = useMemo(() => photos.map((f) => URL.createObjectURL(f)), [photos])
 
@@ -56,6 +61,8 @@ export function ImportActivity() {
       const start = a.startedAt ?? Date.now() - (a.durationS ?? 3600) * 1000
       setParsed(a)
       setKind(a.kind)
+      // Sin horas es una ruta planificada, no una actividad hecha
+      if (!a.startedAt) setMode('route')
       setWhen({ startedAt: start, durationS: a.durationS ?? 0 })
       setTitle(a.name && !/^(activity|actividad|track|ruta)?\s*\d*$/i.test(a.name) ? a.name : activityTitle(a.kind, start))
       setTitleTouched(false)
@@ -65,7 +72,6 @@ export function ImportActivity() {
   }
 
   // Llegada desde "Compartir con Heavy": GPX/TCX, fotos y enlaces de Strava
-  const [params, setParams] = useSearchParams()
   const [link, setLink] = useState('')
   const [opened, setOpened] = useState<null | 'direct' | 'page'>(null)
   const shared = params.get('compartido') === '1'
@@ -127,7 +133,32 @@ export function ImportActivity() {
     when &&
     workouts.some((w) => w.user_id === userId && w.kind && w.kind !== 'gym' && Math.abs(new Date(w.started_at).getTime() - when.startedAt) < 60000)
 
+  const loss = useMemo(() => (parsed ? Math.round(elevationLoss(parsed.track.map((p) => p[2]))) : 0), [parsed])
+
+  async function saveRoute() {
+    if (!parsed) return
+    setSaving(true)
+    const { data, error } = await supabase
+      .from('saved_routes')
+      .insert({
+        title: title.trim() || `Ruta de ${KIND_LABEL[kind].toLowerCase()}`,
+        description: description.trim(),
+        kind,
+        distance_m: parsed.distanceM,
+        elevation_gain_m: parsed.elevationGainM,
+        elevation_loss_m: loss,
+        track: parsed.track.map((p) => [p[0], p[1], p[2], null, null]),
+      })
+      .select('id')
+      .single()
+    setSaving(false)
+    if (error || !data)
+      return toast(error?.message.includes('saved_routes') ? 'Falta ejecutar 009_rutas_guardadas.sql en Supabase' : 'No se pudo guardar la ruta')
+    navigate(`/ruta/${data.id}`, { replace: true })
+  }
+
   async function save() {
+    if (mode === 'route') return saveRoute()
     if (!parsed || !when) return
     if (!when.durationS) return toast('Indica la duración de la actividad')
     setSaving(true)
@@ -171,7 +202,7 @@ export function ImportActivity() {
   return (
     <div className="ia">
       <PageHeader
-        title="Nueva actividad"
+        title={mode === 'route' ? 'Nueva ruta' : 'Nueva actividad'}
         right={
           parsed && (
             <button className="save-btn" disabled={saving} onClick={save}>
@@ -193,7 +224,7 @@ export function ImportActivity() {
           <button className="ia-drop" onClick={() => fileRef.current?.click()}>
             <Icon name="route" size={40} stroke={1.5} />
             <b>Elegir archivo GPX o TCX</b>
-            <span>Carrera, senderismo, caminata o bici</span>
+            <span>{mode === 'route' ? 'Una ruta de Wikiloc, Komoot, Strava… para seguirla' : 'Carrera, senderismo, caminata o bici'}</span>
           </button>
           {error && <p className="ih-error ia-error">{error}</p>}
 
@@ -222,10 +253,16 @@ export function ImportActivity() {
             </div>
             {link && !strava && <p className="ia-note">Ese enlace no parece de una actividad de Strava.</p>}
             {opened === 'direct' && (
-              <p className="ia-note ok">
-                Chrome está descargando el GPX. Cuando acabe, vuelve aquí y pulsa <b>Elegir archivo GPX o TCX</b> (está en Descargas). Si en vez de
-                descargarse te pide entrar, inicia sesión en Strava en Chrome una vez y repite.
-              </p>
+              <div className="ia-back">
+                <p>
+                  Chrome está descargando el GPX. Vuelve aquí (gesto o botón <b>atrás</b>) y elige el archivo: saldrá el primero en <b>Recientes</b>.
+                </p>
+                <button className="btn btn-primary btn-block" onClick={() => fileRef.current?.click()}>
+                  <Icon name="route" size={20} />
+                  Elegir el GPX descargado
+                </button>
+                <small>Si Chrome te pide entrar en Strava, inicia sesión una vez y vuelve a pulsar Pegar.</small>
+              </div>
             )}
             {opened === 'page' && (
               <p className="ia-note ok">
@@ -256,6 +293,16 @@ export function ImportActivity() {
             <StaticMap track={parsed.track} />
           </div>
 
+          <div className="ia-mode" role="radiogroup" aria-label="¿Qué es?">
+            <button role="radio" aria-checked={mode === 'activity'} disabled={!parsed.startedAt} onClick={() => setMode('activity')}>
+              Actividad hecha
+            </button>
+            <button role="radio" aria-checked={mode === 'route'} onClick={() => setMode('route')}>
+              Ruta para seguir
+            </button>
+          </div>
+          {mode === 'route' && <p className="ia-note">Se guarda en tu biblioteca de rutas para seguirla con el GPS otro día. No sale en Inicio.</p>}
+
           <div className="ia-kinds" role="radiogroup" aria-label="Tipo de actividad">
             {KINDS.map((k) => (
               <button
@@ -280,70 +327,99 @@ export function ImportActivity() {
             onChange={(e) => (setTitle(e.target.value), setTitleTouched(true))}
           />
 
-          <div className="fw-stats ia-stats">
-            <div>
-              <span>Distancia</span>
-              <b className="tnum">{fmtKm(parsed.distanceM)}</b>
-            </div>
-            <div>
-              <span>Tiempo</span>
-              <b className="tnum">{time ? fmtDuration(time) : '—'}</b>
-            </div>
-            <div>
-              <span>{paceLabel(kind)}</span>
-              <b className="tnum">{fmtPace(time, parsed.distanceM, kind)}</b>
-            </div>
-            <div>
-              <span>Desnivel +</span>
-              <b className="tnum">{parsed.elevationGainM} m</b>
-            </div>
-          </div>
-          {!parsed.startedAt && <p className="fw-warn">El archivo no tiene horas: indica cuándo empezaste y cuánto duró.</p>}
-          {duplicate && <p className="fw-warn">Ya tienes una actividad que empezó a esa misma hora. ¿Seguro que no está repetida?</p>}
-
-          {when && <WhenFields key={parsed.track.length} startedAt={when.startedAt} durationS={when.durationS} onChange={setWhen} />}
-
-          <section className="fw-photos">
-            {previews.map((src, i) => (
-              <div key={src} className="fw-photo">
-                <img src={src} alt={`Foto ${i + 1}`} />
-                <button aria-label="Quitar foto" onClick={() => setPhotos((p) => p.filter((_, k) => k !== i))}>
-                  <Icon name="close" size={16} stroke={2.5} />
-                </button>
+          {mode === 'route' ? (
+            <div className="fw-stats ia-stats">
+              <div>
+                <span>Distancia</span>
+                <b className="tnum">{fmtKm(parsed.distanceM)}</b>
               </div>
-            ))}
-            {photos.length < 6 && (
-              <label className="fw-add-photo">
-                <Icon name="plus" size={22} />
-                <span>Foto</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  hidden
-                  onChange={(e) => {
-                    crop.enqueue([...(e.target.files ?? [])].slice(0, 6 - photos.length))
-                    e.target.value = ''
-                  }}
-                />
-              </label>
-            )}
-          </section>
+              <div>
+                <span>Desnivel +</span>
+                <b className="tnum">{parsed.elevationGainM} m</b>
+              </div>
+              <div>
+                <span>Desnivel −</span>
+                <b className="tnum">{loss} m</b>
+              </div>
+              <div>
+                <span>Tiempo est.</span>
+                <b className="tnum">{fmtDuration(estimateSeconds(kind, parsed.distanceM, parsed.elevationGainM))}</b>
+              </div>
+            </div>
+          ) : (
+            <div className="fw-stats ia-stats">
+              <div>
+                <span>Distancia</span>
+                <b className="tnum">{fmtKm(parsed.distanceM)}</b>
+              </div>
+              <div>
+                <span>Tiempo</span>
+                <b className="tnum">{time ? fmtDuration(time) : '—'}</b>
+              </div>
+              <div>
+                <span>{paceLabel(kind)}</span>
+                <b className="tnum">{fmtPace(time, parsed.distanceM, kind)}</b>
+              </div>
+              <div>
+                <span>Desnivel +</span>
+                <b className="tnum">{parsed.elevationGainM} m</b>
+              </div>
+            </div>
+          )}
+          {mode === 'activity' && (
+            <>
+              {!parsed.startedAt && <p className="fw-warn">El archivo no tiene horas: indica cuándo empezaste y cuánto duró.</p>}
+              {duplicate && <p className="fw-warn">Ya tienes una actividad que empezó a esa misma hora. ¿Seguro que no está repetida?</p>}
+
+              {when && <WhenFields key={parsed.track.length} startedAt={when.startedAt} durationS={when.durationS} onChange={setWhen} />}
+
+              <section className="fw-photos">
+                {previews.map((src, i) => (
+                  <div key={src} className="fw-photo">
+                    <img src={src} alt={`Foto ${i + 1}`} />
+                    <button aria-label="Quitar foto" onClick={() => setPhotos((p) => p.filter((_, k) => k !== i))}>
+                      <Icon name="close" size={16} stroke={2.5} />
+                    </button>
+                  </div>
+                ))}
+                {photos.length < 6 && (
+                  <label className="fw-add-photo">
+                    <Icon name="plus" size={22} />
+                    <span>Foto</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      hidden
+                      onChange={(e) => {
+                        crop.enqueue([...(e.target.files ?? [])].slice(0, 6 - photos.length))
+                        e.target.value = ''
+                      }}
+                    />
+                  </label>
+                )}
+              </section>
+            </>
+          )}
 
           <textarea
             className="fw-desc"
-            placeholder="¿Qué tal ha ido? Añade notas sobre la actividad…"
+            placeholder={
+              mode === 'route' ? 'Notas de la ruta (dónde aparcar, fuentes, dificultad…)' : '¿Qué tal ha ido? Añade notas sobre la actividad…'
+            }
             value={description}
             maxLength={1000}
             rows={3}
             onChange={(e) => setDescription(e.target.value)}
           />
 
-          <button className="cef-field fw-vis" onClick={() => setSheet('visibility')}>
-            <span className="cef-label">Visibilidad</span>
-            <span className="cef-value">{visibility === 'everyone' ? 'Todos' : 'Solo yo'}</span>
-            <Icon name="chevronRight" size={18} />
-          </button>
+          {mode === 'activity' && (
+            <button className="cef-field fw-vis" onClick={() => setSheet('visibility')}>
+              <span className="cef-label">Visibilidad</span>
+              <span className="cef-value">{visibility === 'everyone' ? 'Todos' : 'Solo yo'}</span>
+              <Icon name="chevronRight" size={18} />
+            </button>
+          )}
 
           <button className="btn btn-block" onClick={() => fileRef.current?.click()}>
             Elegir otro archivo

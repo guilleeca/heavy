@@ -139,3 +139,48 @@
   border-radius: var(--r-sm);
   background: var(--accent-soft);
 }
+
+.ia-back {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: var(--r-md);
+  background: var(--accent-soft);
+}
+
+.ia-back small {
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.ia-mode {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border-radius: var(--r-sm);
+  background: var(--surface);
+}
+
+.ia-mode button {
+  min-height: 38px;
+  border-radius: 6px;
+  color: var(--text-2);
+  font-weight: 600;
+}
+
+.ia-mode button[aria-checked='true'] {
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+.ia-mode button:disabled {
+  opacity: 0.4;
+}
+
+.ia-note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-2);
+}

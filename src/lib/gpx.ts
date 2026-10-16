@@ -270,3 +270,63 @@ export function openInBrowser(url: string) {
     window.open(url, '_blank', 'noopener')
   }
 }
+
+/* ---------- rutas para seguir ---------- */
+
+export type SavedRoute = {
+  id: string
+  user_id: string
+  title: string
+  description: string
+  kind: ActivityKind
+  distance_m: number
+  elevation_gain_m: number
+  elevation_loss_m: number
+  track: TrackPoint[]
+  created_at: string
+}
+
+/** Desnivel negativo (bajadas), con la misma histéresis que el positivo */
+export const elevationLoss = (eles: (number | null)[]) => elevationGain([...eles].reverse())
+
+/** Tiempo estimado (s). Senderismo y caminata con la regla de Naismith; carrera y bici con un ritmo medio tranquilo. */
+export function estimateSeconds(kind: ActivityKind, distanceM: number, gainM: number) {
+  const km = distanceM / 1000
+  if (kind === 'hike') return (km / 4 + gainM / 600) * 3600
+  if (kind === 'walk') return (km / 4.5 + gainM / 800) * 3600
+  if (kind === 'ride') return (km / 18 + gainM / 500) * 3600
+  return (km * 6 + gainM / 100) * 60 // carrera: 6 min/km + 1 min por cada 100 m de subida
+}
+
+/** Exporta un recorrido a GPX (para abrirlo en otra app) */
+export function trackToGpx(name: string, track: TrackPoint[], startedAt?: number) {
+  const esc = (s: string) => s.replace(/[<>&"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' })[c]!)
+  const pts = track
+    .map((p) => {
+      const ele = p[2] != null ? `<ele>${p[2]}</ele>` : ''
+      const time = startedAt != null && p[3] != null ? `<time>${new Date(startedAt + p[3] * 1000).toISOString()}</time>` : ''
+      return `<trkpt lat="${p[0]}" lon="${p[1]}">${ele}${time}</trkpt>`
+    })
+    .join('\n')
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="Heavy" xmlns="http://www.topografix.com/GPX/1/1">\n<trk><name>${esc(name)}</name><trkseg>\n${pts}\n</trkseg></trk>\n</gpx>\n`
+}
+
+/** Punto de la ruta más cercano a una posición. Busca primero cerca del último (para rutas que pasan dos veces por el mismo sitio). */
+export function nearestOnRoute(route: TrackPoint[], lat: number, lon: number, hint = 0) {
+  const scan = (from: number, to: number) => {
+    let best = -1
+    let bestD = Infinity
+    for (let i = Math.max(0, from); i <= Math.min(route.length - 1, to); i++) {
+      const d = haversine(lat, lon, route[i][0], route[i][1])
+      if (d < bestD) {
+        bestD = d
+        best = i
+      }
+    }
+    return { index: best, distance: bestD }
+  }
+  const near = scan(hint - 15, hint + 250)
+  if (near.distance < 60) return near
+  const all = scan(0, route.length - 1)
+  return all.distance < near.distance ? all : near
+}

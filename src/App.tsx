@@ -1,3 +1,4 @@
+import { lazy, Suspense, type ReactNode } from 'react'
 import { createHashRouter, RouterProvider } from 'react-router'
 import { useAuth } from './auth/context'
 import { Layout } from './components/Layout'
@@ -13,6 +14,13 @@ import { RoutineEditor } from './pages/RoutineEditor'
 import { ImportHevy } from './pages/ImportHevy'
 import { ImportActivity } from './pages/ImportActivity'
 import { SharePage } from './pages/SharePage'
+import { Routes } from './pages/Routes'
+import { RouteDetail } from './pages/RouteDetail'
+import { Spinner } from './components/ui'
+
+// Seguir ruta lleva el mapa (Leaflet): se carga solo al abrirlo
+const FollowRoute = lazy(() => import('./pages/FollowRoute'))
+const Lazy = ({ children }: { children: ReactNode }) => <Suspense fallback={<Spinner />}>{children}</Suspense>
 import { Statistics } from './pages/Statistics'
 import { Calendar } from './pages/Calendar'
 import { Measures } from './pages/Measures'
@@ -49,6 +57,16 @@ const router = createHashRouter([
   { path: '/importar', element: <ImportHevy /> },
   { path: '/actividad/nueva', element: <ImportActivity /> },
   { path: '/compartir', element: <SharePage /> },
+  { path: '/rutas', element: <Routes /> },
+  { path: '/ruta/:id', element: <RouteDetail /> },
+  {
+    path: '/ruta/:id/seguir',
+    element: (
+      <Lazy>
+        <FollowRoute />
+      </Lazy>
+    ),
+  },
   { path: '/estadisticas', element: <Statistics /> },
   { path: '/calendario', element: <Calendar /> },
   { path: '/medidas', element: <Measures /> },

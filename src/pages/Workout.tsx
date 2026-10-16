@@ -119,10 +119,16 @@ export function Workout() {
             <Icon name="plus" size={20} stroke={2.2} />
             Empezar entrenamiento vacío
           </button>
-          <Link className="btn btn-block wk-start" to="/actividad/nueva">
-            <Icon name="route" size={20} />
-            Importar carrera o ruta (GPX)
-          </Link>
+          <div className="wk-actions">
+            <Link className="btn wk-start" to="/rutas">
+              <Icon name="route" size={20} />
+              Rutas y GPS
+            </Link>
+            <Link className="btn wk-start" to="/actividad/nueva">
+              <Icon name="plus" size={20} />
+              Importar GPX
+            </Link>
+          </div>
         </section>
 
         <section className="stack">

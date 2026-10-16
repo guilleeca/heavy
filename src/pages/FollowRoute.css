@@ -1,0 +1,172 @@
+.fr {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+.fr-map {
+  flex: 1;
+  min-height: 0;
+  background: #1b1c1f;
+  z-index: 0;
+}
+
+.fr-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: calc(env(safe-area-inset-top, 0px) + 10px) 12px 10px;
+  background: linear-gradient(rgba(0, 0, 0, 0.75), transparent);
+  pointer-events: none;
+}
+
+.fr-top > * {
+  pointer-events: auto;
+}
+
+.fr-round {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(26, 26, 28, 0.92);
+  color: var(--text);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
+.fr-title {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.fr-title b {
+  font-size: 16px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fr-title span {
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.fr-title span.warn {
+  color: var(--warning);
+}
+
+.fr-off {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 66px);
+  left: 12px;
+  right: 12px;
+  z-index: 10;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: var(--danger);
+  color: #fff;
+  font-weight: 700;
+  text-align: center;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+}
+
+.fr-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px calc(env(safe-area-inset-bottom, 0px) + 14px);
+  border-radius: 16px 16px 0 0;
+  margin-top: -16px;
+  z-index: 5;
+  background: var(--surface);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.fr-hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.fr-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.fr-stats div {
+  display: flex;
+  flex-direction: column;
+}
+
+.fr-stats span {
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.fr-stats b {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.fr-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.fr-bar i {
+  display: block;
+  height: 100%;
+  background: var(--route);
+  transition: width 0.6s;
+}
+
+/* Mi posición en el mapa */
+.fr-me {
+  position: relative;
+}
+
+.fr-me-dot {
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  background: #1c8cff;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 6px rgba(28, 140, 255, 0.25);
+}
+
+.fr-me-arrow {
+  position: absolute;
+  inset: -10px;
+}
+
+.fr-me-arrow::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  margin-left: -6px;
+  border: 6px solid transparent;
+  border-bottom: 10px solid #1c8cff;
+}
+
+.fr-off.info {
+  background: rgba(26, 26, 28, 0.95);
+  color: var(--text);
+}

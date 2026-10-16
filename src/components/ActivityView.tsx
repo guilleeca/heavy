@@ -69,7 +69,7 @@ export function ActivityBody({ workout: w }: { workout: Workout }) {
 }
 
 /** Perfil de altitud: tocar o arrastrar marca el punto en el mapa */
-function ElevationProfile({ track, selected, onSelect }: { track: TrackPoint[]; selected: number | null; onSelect: (i: number | null) => void }) {
+export function ElevationProfile({ track, selected, onSelect }: { track: TrackPoint[]; selected: number | null; onSelect: (i: number | null) => void }) {
   const ref = useRef<SVGSVGElement>(null)
   const cum = useMemo(() => trackDistances(track), [track])
   const pts = track.map((p, i) => ({ d: cum[i], e: p[2] })).filter((p): p is { d: number; e: number } => p.e != null)
