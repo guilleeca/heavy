@@ -248,3 +248,13 @@ export function activityTitle(kind: ActivityKind, at: number) {
   const part = h < 6 ? 'de madrugada' : h < 12 ? 'por la mañana' : h < 15 ? 'al mediodía' : h < 21 ? 'por la tarde' : 'por la noche'
   return `${TITLE[kind]} ${part}`
 }
+
+/** Enlace de Strava → descarga del GPX.
+    Con el número de la actividad se va directo a /export_gpx; los enlaces cortos (strava.app.link)
+    se abren tal cual para llegar a la actividad. */
+export function stravaGpxLink(text: string): { url: string; direct: boolean } | null {
+  const id = text.match(/strava\.com\/activities\/(\d+)/)?.[1] ?? (/^\s*\d{6,}\s*$/.test(text) ? text.trim() : null)
+  if (id) return { url: `https://www.strava.com/activities/${id}/export_gpx`, direct: true }
+  const short = text.match(/https?:\/\/(?:strava\.app\.link|www\.strava\.com|strava\.com)\/\S+/)?.[0]
+  return short ? { url: short, direct: false } : null
+}

@@ -24,6 +24,32 @@ export default defineConfig({
         orientation: 'portrait',
         background_color: '#000000',
         theme_color: '#000000',
+        // Aparece en el menú "Compartir" de Android para recibir GPX/TCX y enlaces de Strava
+        share_target: {
+          action: '/heavy/compartir',
+          method: 'POST',
+          enctype: 'multipart/form-data',
+          params: {
+            title: 'title',
+            text: 'text',
+            url: 'url',
+            files: [
+              {
+                name: 'file',
+                accept: [
+                  '.gpx',
+                  '.tcx',
+                  'application/gpx+xml',
+                  'application/gpx',
+                  'application/vnd.garmin.tcx+xml',
+                  'application/xml',
+                  'text/xml',
+                  'application/octet-stream',
+                ],
+              },
+            ],
+          },
+        },
         icons: [
           { src: 'pwa-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'pwa-512.png', sizes: '512x512', type: 'image/png' },
@@ -33,8 +59,8 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,svg,woff2}'],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
-        // Botones de la notificación del entreno
-        importScripts: ['notifications-sw.js'],
+        // Botones de la notificación del entreno y "Compartir con Heavy"
+        importScripts: ['notifications-sw.js', 'share-sw.js'],
         navigateFallback: '/heavy/index.html',
         runtimeCaching: [
           {

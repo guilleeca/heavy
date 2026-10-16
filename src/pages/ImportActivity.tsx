@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router'
 import { useData } from '../data/context'
 import { supabase } from '../lib/supabase'
 import { toast } from '../lib/toast'
@@ -11,6 +11,7 @@ import {
   KIND_LABEL,
   paceLabel,
   parseActivityFile,
+  stravaGpxLink,
   type ActivityKind,
   type ParsedActivity,
 } from '../lib/gpx'
@@ -45,7 +46,7 @@ export function ImportActivity() {
   const crop = useCropQueue((f) => setPhotos((p) => [...p, f].slice(0, 6)))
   const previews = useMemo(() => photos.map((f) => URL.createObjectURL(f)), [photos])
 
-  async function onFile(file?: File) {
+  async function onFile(file?: Blob) {
     if (!file) return
     setError(null)
     try {
@@ -60,6 +61,32 @@ export function ImportActivity() {
       setError(e instanceof Error ? e.message : 'No se pudo leer el archivo.')
     }
   }
+
+  // Llegada desde "Compartir con Heavy" (archivo o enlace de Strava)
+  const [params, setParams] = useSearchParams()
+  const [link, setLink] = useState(() => params.get('enlace') ?? '')
+  const [opened, setOpened] = useState<null | 'direct' | 'page'>(null)
+  const shared = params.get('compartido') === '1'
+  useEffect(() => {
+    if (!shared) return
+    ;(async () => {
+      try {
+        const cache = await caches.open('heavy-share')
+        const key = new URL('shared-activity-file', document.baseURI).href
+        const res = await cache.match(key)
+        if (res) {
+          await onFile(await res.blob())
+          await cache.delete(key)
+        }
+      } catch {
+        setError('No se pudo leer el archivo compartido. Elígelo a mano.')
+      }
+      setParams({}, { replace: true })
+    })()
+    // Solo al llegar
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, [shared])
+  const strava = stravaGpxLink(link)
 
   const duplicate =
     when &&
@@ -134,11 +161,51 @@ export function ImportActivity() {
             <span>Carrera, senderismo, caminata o bici</span>
           </button>
           {error && <p className="ih-error ia-error">{error}</p>}
+
+          <section className="card ia-strava">
+            <h2>Desde Strava</h2>
+            <p>
+              En la app de Strava abre la actividad → <b>Compartir</b> → <b>Copiar enlace</b>, y pégalo aquí (o compártelo directamente con Heavy).
+            </p>
+            <div className="ia-link">
+              <input
+                value={link}
+                inputMode="url"
+                placeholder="strava.com/activities/…"
+                aria-label="Enlace de la actividad de Strava"
+                onChange={(e) => (setLink(e.target.value), setOpened(null))}
+              />
+              <button
+                className="btn btn-primary"
+                disabled={!strava}
+                onClick={() => {
+                  if (!strava) return
+                  window.open(strava.url, '_blank', 'noopener')
+                  setOpened(strava.direct ? 'direct' : 'page')
+                }}
+              >
+                Descargar GPX
+              </button>
+            </div>
+            {link && !strava && <p className="ia-note">Ese enlace no parece de una actividad de Strava.</p>}
+            {opened === 'direct' && (
+              <p className="ia-note ok">
+                Se está descargando el GPX. Cuando acabe, toca <b>Compartir</b> en la descarga y elige <b>Heavy</b>, o vuelve aquí y pulsa{' '}
+                <b>Elegir archivo</b>. Si en vez de descargarse te pide entrar, inicia sesión en Strava en el navegador y repite.
+              </p>
+            )}
+            {opened === 'page' && (
+              <p className="ia-note ok">
+                Se ha abierto la actividad. Si se abre en el navegador, copia la dirección (strava.com/activities/…) y pégala aquí para descargar el
+                GPX.
+              </p>
+            )}
+          </section>
           <section className="card ia-help">
             <h2>¿De dónde saco el archivo?</h2>
             <ul>
               <li>
-                <b>Strava</b> (desde la web): abre la actividad → menú <b>⋯</b> → <b>Exportar GPX</b>.
+                <b>Strava</b> (desde la web): abre la actividad → menú <b>⋯</b> → <b>Exportar GPX</b>. O usa el enlace de arriba.
               </li>
               <li>
                 <b>Garmin Connect</b>: abre la actividad → <b>⚙</b> → <b>Exportar a GPX</b> (o TCX).
