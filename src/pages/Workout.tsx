@@ -7,7 +7,7 @@ import type { Folder, Routine } from '../lib/routines'
 import { Icon } from '../components/Icon'
 import { RoutineMenu } from '../components/RoutineMenu'
 import { useStartWorkout } from '../workout/useStartWorkout'
-import { Sheet, SheetItem, Spinner} from '../components/ui'
+import { Sheet, SheetItem, Spinner } from '../components/ui'
 import './Workout.css'
 
 /** Entrenamiento: empezar un entreno y gestionar rutinas y carpetas. */
@@ -47,7 +47,10 @@ export function Workout() {
     const res =
       folderSheet.mode === 'new'
         ? await supabase.from('routine_folders').insert({ name, position: myFolders.length })
-        : await supabase.from('routine_folders').update({ name }).eq('id', (folderSheet as { folder: Folder }).folder.id)
+        : await supabase
+            .from('routine_folders')
+            .update({ name })
+            .eq('id', (folderSheet as { folder: Folder }).folder.id)
     setFolderSheet(null)
     if (res.error) return toast('No se pudo guardar la carpeta')
     await refresh()
@@ -84,7 +87,11 @@ export function Workout() {
           {label} ({list.length})
         </button>
         {folder && (
-          <button className="header-btn" aria-label={`Opciones de la carpeta ${folder.name}`} onClick={() => setFolderSheet({ mode: 'menu', folder })}>
+          <button
+            className="header-btn"
+            aria-label={`Opciones de la carpeta ${folder.name}`}
+            onClick={() => setFolderSheet({ mode: 'menu', folder })}
+          >
             <Icon name="more" />
           </button>
         )}
@@ -112,6 +119,10 @@ export function Workout() {
             <Icon name="plus" size={20} stroke={2.2} />
             Empezar entrenamiento vacío
           </button>
+          <Link className="btn btn-block wk-start" to="/actividad/nueva">
+            <Icon name="route" size={20} />
+            Importar carrera o ruta (GPX)
+          </Link>
         </section>
 
         <section className="stack">
@@ -145,7 +156,14 @@ export function Workout() {
           <Spinner />
         ) : (
           <>
-            {myFolders.map((f) => group(f.id, f.name, mine.filter((r) => r.folder_id === f.id), f))}
+            {myFolders.map((f) =>
+              group(
+                f.id,
+                f.name,
+                mine.filter((r) => r.folder_id === f.id),
+                f,
+              ),
+            )}
             {group('loose', 'Mis rutinas', loose)}
           </>
         )}
@@ -179,7 +197,11 @@ export function Workout() {
         </form>
       </Sheet>
 
-      <Sheet open={folderSheet?.mode === 'menu'} onClose={() => setFolderSheet(null)} title={folderSheet && 'folder' in folderSheet ? folderSheet.folder.name : ''}>
+      <Sheet
+        open={folderSheet?.mode === 'menu'}
+        onClose={() => setFolderSheet(null)}
+        title={folderSheet && 'folder' in folderSheet ? folderSheet.folder.name : ''}
+      >
         {folderSheet && 'folder' in folderSheet && (
           <>
             <SheetItem icon={<Icon name="plus" size={20} />} onClick={() => navigate(`/rutina/nueva?carpeta=${folderSheet.folder.id}`)}>

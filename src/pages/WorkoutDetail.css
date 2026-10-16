@@ -84,17 +84,29 @@
 
 .wd-photos {
   display: flex;
-  gap: 8px;
+  gap: 4px;
+  margin: 0 -16px;
   overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.wd-photos::-webkit-scrollbar {
+  display: none;
 }
 
 .wd-photos button {
-  flex: none;
-  width: 220px;
-  height: 220px;
+  flex: 0 0 100%;
+  aspect-ratio: 1;
   padding: 0;
-  border-radius: var(--r-md);
+  scroll-snap-align: center;
+  background: var(--surface-2);
   overflow: hidden;
+}
+
+/* Si hay varias, se asoma la siguiente */
+.wd-photos button:not(:only-child) {
+  flex-basis: 88%;
 }
 
 .wd-photos img {

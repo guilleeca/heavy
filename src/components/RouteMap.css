@@ -1,0 +1,27 @@
+.rm {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  max-height: 60dvh;
+  background: #1b1c1f;
+  z-index: 0;
+}
+
+.rm .leaflet-control-attribution {
+  background: rgba(0, 0, 0, 0.5);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 10px;
+}
+
+.rm .leaflet-control-attribution a {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.rm .leaflet-bar a {
+  background: var(--surface-2);
+  color: var(--text);
+  border-color: var(--line);
+}
+
+.rm .rm-tiles {
+  filter: var(--map-filter);
+}

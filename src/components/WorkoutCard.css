@@ -219,3 +219,13 @@
 .wc-dots button[aria-selected='true']::after {
   background: var(--accent);
 }
+
+.wc-map {
+  aspect-ratio: 1;
+  padding: 0;
+}
+
+.wc-map .sm {
+  width: 100%;
+  height: 100%;
+}

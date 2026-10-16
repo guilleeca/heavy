@@ -18,6 +18,8 @@
   --warning: #ffb020;
   --muscle: #e5352b;
   --muscle-soft: #f08a80;
+  --route: #ff6b2c;        /* recorridos en el mapa */
+  --map-filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.86) saturate(0.6); /* mapa oscuro */
 
   --font: 'Inter Variable', Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 

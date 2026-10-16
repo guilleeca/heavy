@@ -4,7 +4,9 @@ import { useData } from '../data/context'
 import { MUSCLE_LABEL, type Muscle } from '../lib/exercises'
 import { setsByMuscle } from '../lib/stats'
 import { supabase } from '../lib/supabase'
-import { fmtDuration, fmtVolume, fmtWhen, newRecords, type Workout } from '../lib/workouts'
+import { fmtDuration, fmtVolume, fmtWhen, isActivity, newRecords, type Workout } from '../lib/workouts'
+import { fmtKm, fmtPace, KIND_EMOJI, KIND_LABEL, paceLabel, type Kind } from '../lib/gpx'
+import { StaticMap } from './StaticMap'
 import { Avatar } from '../pages/RoutineDetail'
 import { BodyMap } from './BodyMap'
 import { Icon } from './Icon'
@@ -50,7 +52,11 @@ export const WorkoutCard = memo(function WorkoutCard({ workout }: { workout: Wor
   const track = useRef<HTMLDivElement>(null)
   const [slide, setSlide] = useState(0)
   const [viewer, setViewer] = useState<number | null>(null)
-  const slides = photos.length + 2
+  // Las fotos van primero; mientras se cargan se reserva su hueco
+  const activity = isActivity(workout)
+  const kind = (workout.kind ?? 'gym') as Kind
+  const hasTrack = (workout.track?.length ?? 0) > 1
+  const slides = workout.photos.length + (activity ? (hasTrack ? 1 : 0) : 2)
   const open = () => navigate(`/entreno/${workout.id}`)
   const go = (i: number) => track.current?.scrollTo({ left: i * track.current.clientWidth, behavior: 'smooth' })
 
@@ -67,89 +73,129 @@ export const WorkoutCard = memo(function WorkoutCard({ workout }: { workout: Wor
             <span>{fmtWhen(workout.started_at)}</span>
           </div>
         </div>
-        <h3 className="wc-title">{workout.title}</h3>
+        <h3 className="wc-title">
+          {activity && <span aria-label={KIND_LABEL[kind]}>{KIND_EMOJI[kind]} </span>}
+          {workout.title}
+        </h3>
         {workout.description && <p className="wc-desc">{workout.description}</p>}
-        <div className="wc-stats">
-          <div>
-            <span>Duración</span>
-            <b>{fmtDuration(workout.duration_s)}</b>
-          </div>
-          <div>
-            <span>Volumen</span>
-            <b>{fmtVolume(workout.volume_kg)}</b>
-          </div>
-          {records > 0 ? (
+        {activity ? (
+          <div className="wc-stats">
             <div>
-              <span>Récords</span>
-              <b className="wc-records">
-                <Icon name="trophy" size={15} /> {records}
-              </b>
+              <span>Distancia</span>
+              <b>{fmtKm(workout.distance_m ?? 0)}</b>
             </div>
-          ) : (
             <div>
-              <span>Series</span>
-              <b>{workout.sets_count}</b>
+              <span>Tiempo</span>
+              <b>{fmtDuration(workout.moving_s || workout.duration_s)}</b>
+            </div>
+            <div>
+              <span>{paceLabel(kind)}</span>
+              <b>{fmtPace(workout.moving_s || workout.duration_s, workout.distance_m ?? 0, kind)}</b>
+            </div>
+            {(workout.elevation_gain_m ?? 0) >= 10 && (
+              <div>
+                <span>Desnivel</span>
+                <b>{Math.round(workout.elevation_gain_m!)} m</b>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="wc-stats">
+            <div>
+              <span>Duración</span>
+              <b>{fmtDuration(workout.duration_s)}</b>
+            </div>
+            <div>
+              <span>Volumen</span>
+              <b>{fmtVolume(workout.volume_kg)}</b>
+            </div>
+            {records > 0 ? (
+              <div>
+                <span>Récords</span>
+                <b className="wc-records">
+                  <Icon name="trophy" size={15} /> {records}
+                </b>
+              </div>
+            ) : (
+              <div>
+                <span>Series</span>
+                <b>{workout.sets_count}</b>
+              </div>
+            )}
+          </div>
+        )}
+      </Link>
+
+      {slides > 0 && (
+        <div className="wc-carousel">
+          <div
+            ref={track}
+            className="wc-track"
+            onScroll={(e) => {
+              const el = e.currentTarget
+              setSlide(Math.round(el.scrollLeft / el.clientWidth))
+            }}
+          >
+            {workout.photos.map((path, i) => (
+              <button key={path} className="wc-slide wc-photo" onClick={() => photos[i] && setViewer(i)} aria-label={`Ver foto ${i + 1} del entreno`}>
+                {photos[i] && <img src={photos[i]} alt="" loading="lazy" decoding="async" />}
+              </button>
+            ))}
+
+            {activity ? (
+              hasTrack && (
+                <button className="wc-slide wc-map" onClick={open} aria-label="Ver el recorrido">
+                  <StaticMap track={workout.track!} />
+                </button>
+              )
+            ) : (
+              <>
+                <button className="wc-slide wc-summary" onClick={open} aria-label="Resumen del entreno">
+                  <span className="wc-slide-title">Entreno</span>
+                  {shown.map((e, i) => {
+                    const ex = findExercise(e.exerciseId)
+                    return (
+                      <span key={i} className="wc-ex">
+                        <ExerciseThumb exercise={ex} size={40} />
+                        <span>
+                          <b>{ex?.name ?? 'Ejercicio'}</b>
+                          <small>
+                            {e.sets.length} {e.sets.length === 1 ? 'serie' : 'series'}
+                          </small>
+                        </span>
+                      </span>
+                    )
+                  })}
+                  {more > 0 && (
+                    <span className="wc-more">
+                      y {more} ejercicio{more === 1 ? '' : 's'} más
+                    </span>
+                  )}
+                </button>
+
+                <button className="wc-slide wc-muscles" onClick={open} aria-label="Músculos trabajados">
+                  <span className="wc-slide-title">Músculos trabajados</span>
+                  <BodyMap primary={[]} weights={weights} className="wc-body" />
+                  <span className="wc-chips">
+                    {muscles.slice(0, 4).map(([m, v]) => (
+                      <span key={m}>
+                        {MUSCLE_LABEL[m]} <b>{Math.round((v / totalMuscle) * 100)}%</b>
+                      </span>
+                    ))}
+                  </span>
+                </button>
+              </>
+            )}
+          </div>
+          {slides > 1 && (
+            <div className="wc-dots" role="tablist" aria-label="Páginas">
+              {Array.from({ length: slides }, (_, i) => (
+                <button key={i} role="tab" aria-selected={slide === i} aria-label={`Página ${i + 1}`} onClick={() => go(i)} />
+              ))}
             </div>
           )}
         </div>
-      </Link>
-
-      <div className="wc-carousel">
-        <div
-          ref={track}
-          className="wc-track"
-          onScroll={(e) => {
-            const el = e.currentTarget
-            setSlide(Math.round(el.scrollLeft / el.clientWidth))
-          }}
-        >
-          {photos.map((src, i) => (
-            <button key={src} className="wc-slide wc-photo" onClick={() => setViewer(i)} aria-label={`Ver foto ${i + 1} del entreno`}>
-              <img src={src} alt="" loading="lazy" decoding="async" />
-            </button>
-          ))}
-
-          <button className="wc-slide wc-summary" onClick={open} aria-label="Resumen del entreno">
-            <span className="wc-slide-title">Entreno</span>
-            {shown.map((e, i) => {
-              const ex = findExercise(e.exerciseId)
-              return (
-                <span key={i} className="wc-ex">
-                  <ExerciseThumb exercise={ex} size={40} />
-                  <span>
-                    <b>{ex?.name ?? 'Ejercicio'}</b>
-                    <small>
-                      {e.sets.length} {e.sets.length === 1 ? 'serie' : 'series'}
-                    </small>
-                  </span>
-                </span>
-              )
-            })}
-            {more > 0 && (
-              <span className="wc-more">
-                y {more} ejercicio{more === 1 ? '' : 's'} más
-              </span>
-            )}
-          </button>
-
-          <button className="wc-slide wc-muscles" onClick={open} aria-label="Músculos trabajados">
-            <span className="wc-slide-title">Músculos trabajados</span>
-            <BodyMap primary={[]} weights={weights} className="wc-body" />
-            <span className="wc-chips">
-              {muscles.slice(0, 4).map(([m, v]) => (
-                <span key={m}>
-                  {MUSCLE_LABEL[m]} <b>{Math.round((v / totalMuscle) * 100)}%</b>
-                </span>
-              ))}
-            </span>
-          </button>
-        </div>
-        <div className="wc-dots" role="tablist" aria-label="Páginas">
-          {Array.from({ length: slides }, (_, i) => (
-            <button key={i} role="tab" aria-selected={slide === i} aria-label={`Página ${i + 1}`} onClick={() => go(i)} />
-          ))}
-        </div>
-      </div>
+      )}
 
       <WorkoutSocial workout={workout} />
       {viewer != null && <PhotoViewer urls={photos} start={viewer} onClose={() => setViewer(null)} />}

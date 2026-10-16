@@ -11,6 +11,7 @@ import { NewExercise } from './pages/NewExercise'
 import { RoutineDetail } from './pages/RoutineDetail'
 import { RoutineEditor } from './pages/RoutineEditor'
 import { ImportHevy } from './pages/ImportHevy'
+import { ImportActivity } from './pages/ImportActivity'
 import { Statistics } from './pages/Statistics'
 import { Calendar } from './pages/Calendar'
 import { Measures } from './pages/Measures'
@@ -45,6 +46,7 @@ const router = createHashRouter([
   { path: '/rutina/:id/editar', element: <RoutineEditor /> },
   { path: '/explorar', element: <Explore /> },
   { path: '/importar', element: <ImportHevy /> },
+  { path: '/actividad/nueva', element: <ImportActivity /> },
   { path: '/estadisticas', element: <Statistics /> },
   { path: '/calendario', element: <Calendar /> },
   { path: '/medidas', element: <Measures /> },

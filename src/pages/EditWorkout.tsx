@@ -5,7 +5,8 @@ import { supabase } from '../lib/supabase'
 import { toast } from '../lib/toast'
 import { MUSCLE_LABEL, type ExerciseType } from '../lib/exercises'
 import { SET_TYPE_LABEL, type RoutineSet, type SetType } from '../lib/routines'
-import { fmtDuration, fmtVolume, uid, workoutVolume, type Workout, type WorkoutExercise } from '../lib/workouts'
+import { fmtDuration, fmtVolume, isActivity, uid, workoutVolume, type Workout, type WorkoutExercise } from '../lib/workouts'
+import { KIND_EMOJI, KIND_LABEL, type ActivityKind } from '../lib/gpx'
 import { Icon } from '../components/Icon'
 import { ExercisePicker } from '../components/ExercisePicker'
 import { ExerciseThumb, PageHeader, Sheet, SheetItem, Spinner } from '../components/ui'
@@ -16,6 +17,7 @@ import './RoutineEditor.css'
 import './FinishWorkout.css'
 import '../components/CustomExerciseForm.css'
 import './EditWorkout.css'
+import './ImportActivity.css'
 
 type KSet = RoutineSet & { _k: string }
 type KItem = { _k: string; exerciseId: string; notes: string; sets: KSet[] }
@@ -73,6 +75,8 @@ function Editor({ workout: w }: { workout: Workout }) {
   const [picker, setPicker] = useState<null | { replace?: number }>(null)
   const [menu, setMenu] = useState<Menu>(null)
   const [saving, setSaving] = useState(false)
+  const activity = isActivity(w)
+  const [kind, setKind] = useState<ActivityKind>((w.kind && w.kind !== 'gym' ? w.kind : 'run') as ActivityKind)
   const previews = useMemo(() => added.map((f) => URL.createObjectURL(f)), [added])
 
   // Fotos ya subidas: enlaces firmados para verlas
@@ -94,7 +98,7 @@ function Editor({ workout: w }: { workout: Workout }) {
 
   async function save() {
     if (!title.trim()) return toast('Ponle un título al entreno')
-    if (!sets) return toast('El entreno necesita al menos una serie')
+    if (!activity && !sets) return toast('El entreno necesita al menos una serie')
     setSaving(true)
     // Fotos nuevas → Storage; las quitadas se borran
     const photos = [...kept]
@@ -114,9 +118,7 @@ function Editor({ workout: w }: { workout: Workout }) {
         started_at: new Date(when.startedAt).toISOString(),
         ended_at: new Date(when.startedAt + when.durationS * 1000).toISOString(),
         duration_s: when.durationS,
-        volume_kg: volume,
-        sets_count: sets,
-        exercises,
+        ...(activity ? { kind, moving_s: when.durationS === w.duration_s ? w.moving_s : null } : { volume_kg: volume, sets_count: sets, exercises }),
         photos,
       })
       .eq('id', w.id)
@@ -128,7 +130,7 @@ function Editor({ workout: w }: { workout: Workout }) {
     if (removed.length) await supabase.storage.from('workout-photos').remove(removed)
     await refresh()
     setSaving(false)
-    toast('Entreno actualizado')
+    toast(activity ? 'Actividad actualizada' : 'Entreno actualizado')
     navigate(`/entreno/${w.id}`, { replace: true })
   }
 
@@ -152,7 +154,7 @@ function Editor({ workout: w }: { workout: Workout }) {
   return (
     <div className="ew">
       <PageHeader
-        title="Editar entreno"
+        title={activity ? 'Editar actividad' : 'Editar entreno'}
         left={
           <button className="text-btn" onClick={() => setMenu({ kind: 'discard' })}>
             Cancelar
@@ -167,21 +169,34 @@ function Editor({ workout: w }: { workout: Workout }) {
 
       <div className="fw-body">
         <input className="re-title" placeholder="Título del entreno" value={title} maxLength={80} onChange={(e) => setTitle(e.target.value)} />
+        {activity && (
+          <div className="ia-kinds" role="radiogroup" aria-label="Tipo de actividad">
+            {(['run', 'hike', 'walk', 'ride'] as ActivityKind[]).map((k) => (
+              <button key={k} role="radio" aria-checked={kind === k} onClick={() => setKind(k)}>
+                <span aria-hidden="true">{KIND_EMOJI[k]}</span> {KIND_LABEL[k]}
+              </button>
+            ))}
+          </div>
+        )}
 
-        <div className="fw-stats">
-          <div>
-            <span>Duración</span>
-            <b className="tnum">{fmtDuration(when.durationS)}</b>
-          </div>
-          <div>
-            <span>Volumen</span>
-            <b className="tnum">{fmtVolume(volume)}</b>
-          </div>
-          <div>
-            <span>Series</span>
-            <b className="tnum">{sets}</b>
-          </div>
-        </div>
+        {!activity && (
+          <>
+            <div className="fw-stats">
+              <div>
+                <span>Duración</span>
+                <b className="tnum">{fmtDuration(when.durationS)}</b>
+              </div>
+              <div>
+                <span>Volumen</span>
+                <b className="tnum">{fmtVolume(volume)}</b>
+              </div>
+              <div>
+                <span>Series</span>
+                <b className="tnum">{sets}</b>
+              </div>
+            </div>
+          </>
+        )}
 
         <WhenFields startedAt={when.startedAt} durationS={when.durationS} onChange={setWhen} />
 
@@ -235,48 +250,55 @@ function Editor({ workout: w }: { workout: Workout }) {
           <Icon name="chevronRight" size={18} />
         </button>
 
-        <h2 className="section-title ew-section">Ejercicios</h2>
-        {items.map((re, i) => {
-          const ex = findExercise(re.exerciseId)
-          const type: ExerciseType = ex?.type ?? 'weight_reps'
-          return (
-            <section key={re._k} className="re-ex">
-              <div className="re-ex-head">
-                <ExerciseThumb exercise={ex} />
-                <div className="re-ex-name">
-                  <b>{ex?.name ?? 'Ejercicio no disponible'}</b>
-                  {ex && <span>{MUSCLE_LABEL[ex.muscle]}</span>}
-                </div>
-                <button className="header-btn" aria-label="Opciones del ejercicio" onClick={() => setMenu({ kind: 'exercise', index: i })}>
-                  <Icon name="more" />
-                </button>
-              </div>
-              <textarea
-                className="re-notes"
-                placeholder="Notas del ejercicio"
-                value={re.notes}
-                rows={1}
-                maxLength={300}
-                onChange={(e) => update(i, (x) => ({ ...x, notes: e.target.value }))}
-              />
-              <SetTable
-                type={type}
-                sets={re.sets}
-                onSetMenu={(s) => setMenu({ kind: 'set', index: i, set: s })}
-                onChange={(s, patch) => updateSet(i, s, patch)}
-                idPrefix={`w${i}`}
-              />
-              <button className="btn btn-block re-add-set" onClick={() => update(i, (x) => ({ ...x, sets: [...x.sets, blankSet(x.sets.at(-1))] }))}>
-                <Icon name="plus" size={18} stroke={2.2} />
-                Añadir serie
-              </button>
-            </section>
-          )
-        })}
-        <button className="btn btn-primary btn-block re-add" onClick={() => setPicker({})}>
-          <Icon name="plus" size={20} stroke={2.2} />
-          Añadir ejercicio
-        </button>
+        {!activity && (
+          <>
+            <h2 className="section-title ew-section">Ejercicios</h2>
+            {items.map((re, i) => {
+              const ex = findExercise(re.exerciseId)
+              const type: ExerciseType = ex?.type ?? 'weight_reps'
+              return (
+                <section key={re._k} className="re-ex">
+                  <div className="re-ex-head">
+                    <ExerciseThumb exercise={ex} />
+                    <div className="re-ex-name">
+                      <b>{ex?.name ?? 'Ejercicio no disponible'}</b>
+                      {ex && <span>{MUSCLE_LABEL[ex.muscle]}</span>}
+                    </div>
+                    <button className="header-btn" aria-label="Opciones del ejercicio" onClick={() => setMenu({ kind: 'exercise', index: i })}>
+                      <Icon name="more" />
+                    </button>
+                  </div>
+                  <textarea
+                    className="re-notes"
+                    placeholder="Notas del ejercicio"
+                    value={re.notes}
+                    rows={1}
+                    maxLength={300}
+                    onChange={(e) => update(i, (x) => ({ ...x, notes: e.target.value }))}
+                  />
+                  <SetTable
+                    type={type}
+                    sets={re.sets}
+                    onSetMenu={(s) => setMenu({ kind: 'set', index: i, set: s })}
+                    onChange={(s, patch) => updateSet(i, s, patch)}
+                    idPrefix={`w${i}`}
+                  />
+                  <button
+                    className="btn btn-block re-add-set"
+                    onClick={() => update(i, (x) => ({ ...x, sets: [...x.sets, blankSet(x.sets.at(-1))] }))}
+                  >
+                    <Icon name="plus" size={18} stroke={2.2} />
+                    Añadir serie
+                  </button>
+                </section>
+              )
+            })}
+            <button className="btn btn-primary btn-block re-add" onClick={() => setPicker({})}>
+              <Icon name="plus" size={20} stroke={2.2} />
+              Añadir ejercicio
+            </button>
+          </>
+        )}
       </div>
 
       <Sheet open={menu?.kind === 'exercise'} onClose={() => setMenu(null)} title={current ? findExercise(current.exerciseId)?.name : ''}>
@@ -317,7 +339,11 @@ function Editor({ workout: w }: { workout: Workout }) {
                 Bajar
               </SheetItem>
             )}
-            <SheetItem danger icon={<Icon name="close" size={20} />} onClick={() => (setItems((l) => l.filter((_, k) => k !== menu.index)), setMenu(null))}>
+            <SheetItem
+              danger
+              icon={<Icon name="close" size={20} />}
+              onClick={() => (setItems((l) => l.filter((_, k) => k !== menu.index)), setMenu(null))}
+            >
               Quitar ejercicio
             </SheetItem>
           </>

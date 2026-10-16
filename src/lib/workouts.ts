@@ -1,5 +1,6 @@
 import type { Exercise, ExerciseType } from './exercises'
 import type { RoutineSet, SetType } from './routines'
+import type { Kind, TrackPoint } from './gpx'
 
 /* ---------- Entreno guardado (Supabase) ---------- */
 
@@ -30,7 +31,15 @@ export type Workout = {
   exercises: WorkoutExercise[]
   photos: string[]
   visibility: 'everyone' | 'private'
+  /** Gimnasio o actividad con recorrido (GPX) */
+  kind?: Kind
+  distance_m?: number | null
+  elevation_gain_m?: number | null
+  moving_s?: number | null
+  track?: TrackPoint[] | null
 }
+
+export const isActivity = (w: Pick<Workout, 'kind'>) => !!w.kind && w.kind !== 'gym'
 
 /* ---------- Entreno en curso (solo en el móvil hasta terminar) ---------- */
 

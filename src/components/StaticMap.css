@@ -1,0 +1,60 @@
+.sm {
+  position: relative;
+  overflow: hidden;
+  background: #1b1c1f;
+}
+
+.sm img {
+  position: absolute;
+  filter: var(--map-filter);
+  width: 256px;
+  height: 256px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.sm svg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.sm-casing {
+  fill: none;
+  stroke: rgba(0, 0, 0, 0.55);
+  stroke-width: 7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sm-route {
+  fill: none;
+  stroke: var(--route);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sm-start {
+  fill: #2fc65f;
+  stroke: #fff;
+  stroke-width: 2;
+}
+
+.sm-end {
+  fill: #ff453a;
+  stroke: #fff;
+  stroke-width: 2;
+}
+
+.sm-attr {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  padding: 1px 6px;
+  border-top-left-radius: 4px;
+  background: rgba(0, 0, 0, 0.55);
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  pointer-events: none;
+}

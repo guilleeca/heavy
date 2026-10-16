@@ -48,6 +48,19 @@ src/data/exercises.json  biblioteca de ejercicios (generada desde ExerciseDB)
 4. ~~Ejercicios y rutinas (carpetas, notas por ejercicio)~~
 5. ~~Entreno en directo (y ver el del otro en tiempo real)~~
 6. Rutas y carreras: importar GPX, mapa, altitud y parciales
-7. Inicio: canal con me gusta y comentarios
-8. Perfil: estadísticas, calendario y récords
-9. Strava (opcional)
+7. ~~Inicio: canal con me gusta y comentarios~~
+8. ~~Perfil: estadísticas, calendario, medidas y récords~~
+9. ~~Importar el historial de Hevy (CSV)~~
+10. Strava (opcional)
+11. Enviar el entreno al Excel del entrenador (pendiente)
+
+### Pendiente: Excel del entrenador
+
+Al terminar un entreno, un botón que pase las series al Excel compartido del entrenador.
+Antes de empezar hay que preguntar:
+
+- ¿Dónde está el Excel compartido: Google Drive (Sheets) u OneDrive (Excel online)?
+- Una copia o acceso al archivo para ver cómo está organizado: una pestaña por semana o por día,
+  si el entrenador escribe el plan (series y reps objetivo) y se rellena lo hecho, o se escribe todo de cero,
+  y cómo nombra los ejercicios (para emparejarlos con los de Heavy).
+- Cómo le gustaría que funcionara: cuándo se envía, qué datos y dónde se escriben.

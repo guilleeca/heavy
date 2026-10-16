@@ -1,0 +1,87 @@
+.ia {
+  min-height: 100dvh;
+}
+
+.ia-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 36px 16px;
+  border: 1.5px dashed var(--surface-3);
+  border-radius: var(--r-lg);
+  color: var(--text-2);
+  text-align: center;
+}
+
+.ia-drop svg {
+  color: var(--route);
+}
+
+.ia-drop b {
+  font-size: 17px;
+  color: var(--text);
+}
+
+.ia-error {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: rgba(255, 69, 58, 0.14);
+  color: var(--danger);
+  font-size: 14px;
+}
+
+.ia-help h2 {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+.ia-help ul {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text-2);
+}
+
+.ia-help b {
+  color: var(--text);
+}
+
+.ia-map {
+  margin: -12px -16px 0;
+}
+
+.ia-map .sm {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+}
+
+.ia-kinds {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.ia-kinds button {
+  flex: none;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.ia-kinds button[aria-checked='true'] {
+  background: var(--route);
+  color: #fff;
+}
+
+.ia-stats {
+  grid-template-columns: repeat(4, 1fr);
+}

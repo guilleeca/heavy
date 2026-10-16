@@ -3,7 +3,9 @@ import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { useData } from '../data/context'
 import { supabase } from '../lib/supabase'
 import { toast } from '../lib/toast'
-import { fmtDuration, fmtSet, fmtVolume, fmtWhen, newRecords } from '../lib/workouts'
+import { fmtDuration, fmtSet, fmtVolume, fmtWhen, isActivity, newRecords } from '../lib/workouts'
+import { KIND_LABEL } from '../lib/gpx'
+import { ActivityBody } from '../components/ActivityView'
 import { Icon } from '../components/Icon'
 import { ExerciseThumb, PageHeader, Sheet, SheetItem, Spinner } from '../components/ui'
 import { SetBadge } from './RoutineEditor'
@@ -51,6 +53,7 @@ export function WorkoutDetail() {
   }
 
   const mine = w.user_id === userId
+  const activity = isActivity(w)
   const author = profiles.find((p) => p.id === w.user_id)
   const records = newRecords(w, workouts, findExercise)
   const count = workouts.filter((x) => x.user_id === w.user_id && x.started_at <= w.started_at).length
@@ -69,7 +72,7 @@ export function WorkoutDetail() {
   return (
     <div className="wd">
       <PageHeader
-        title={fresh ? 'Entreno guardado' : 'Entreno'}
+        title={fresh ? (activity ? 'Actividad guardada' : 'Entreno guardado') : activity ? KIND_LABEL[w.kind!] : 'Entreno'}
         left={
           fresh ? (
             <button className="text-btn" onClick={() => navigate('/', { replace: true })}>
@@ -103,89 +106,97 @@ export function WorkoutDetail() {
             <span>{fmtWhen(w.started_at)}</span>
           </div>
         </section>
-        <h1 className="wd-title">{w.title}</h1>
-        {w.description && <p className="wd-desc">{w.description}</p>}
-
-        <div className="wd-stats">
-          <div>
-            <span>Duración</span>
-            <b>{fmtDuration(w.duration_s)}</b>
-          </div>
-          <div>
-            <span>Volumen</span>
-            <b>{fmtVolume(w.volume_kg)}</b>
-          </div>
-          <div>
-            <span>Series</span>
-            <b>{w.sets_count}</b>
-          </div>
-          <div>
-            <span>Récords</span>
-            <b>{records.length}</b>
-          </div>
-        </div>
-
-        {photoUrls.length > 0 && (
+        {w.photos.length > 0 && (
           <div className="wd-photos">
-            {photoUrls.map((u, i) => (
-              <button key={u} onClick={() => setViewer(i)} aria-label={`Ver foto ${i + 1} del entreno`}>
-                <img src={u} alt="" />
+            {w.photos.map((path, i) => (
+              <button key={path} onClick={() => photoUrls[i] && setViewer(i)} aria-label={`Ver foto ${i + 1} del entreno`}>
+                {photoUrls[i] && <img src={photoUrls[i]} alt="" />}
               </button>
             ))}
           </div>
         )}
+        <h1 className="wd-title">{w.title}</h1>
+        {w.description && <p className="wd-desc">{w.description}</p>}
+
+        {activity ? (
+          <ActivityBody workout={w} />
+        ) : (
+          <div className="wd-stats">
+            <div>
+              <span>Duración</span>
+              <b>{fmtDuration(w.duration_s)}</b>
+            </div>
+            <div>
+              <span>Volumen</span>
+              <b>{fmtVolume(w.volume_kg)}</b>
+            </div>
+            <div>
+              <span>Series</span>
+              <b>{w.sets_count}</b>
+            </div>
+            <div>
+              <span>Récords</span>
+              <b>{records.length}</b>
+            </div>
+          </div>
+        )}
+
         {viewer != null && <PhotoViewer urls={photoUrls} start={viewer} onClose={() => setViewer(null)} />}
 
         <WorkoutSocial workout={w} preview={3} />
 
-        {records.length > 0 && (
-          <section className="card wd-records">
-            <h2 className="section-title">Récords nuevos</h2>
-            {records.map((r, i) => (
-              <div key={i} className="wd-record">
-                <span className="wd-pr">PR</span>
-                <div>
-                  <b>{findExercise(r.exerciseId)?.name ?? 'Ejercicio'}</b>
-                  <span>
-                    {r.label}: {r.value}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </section>
-        )}
-
-        <section className="wd-list">
-          <h2 className="section-title">Entreno</h2>
-          {w.exercises.map((e, i) => {
-            const ex = findExercise(e.exerciseId)
-            let n = 0
-            return (
-              <article key={i} className="wd-ex">
-                <button className="wd-ex-head" onClick={() => navigate(`/ejercicio/${encodeURIComponent(e.exerciseId)}`)}>
-                  <ExerciseThumb exercise={ex} />
-                  <b>{ex?.name ?? 'Ejercicio no disponible'}</b>
-                </button>
-                {e.notes && <p className="wd-notes">{e.notes}</p>}
-                <div className="wd-sets">
-                  <div className="wd-set head">
-                    <span>SERIE</span>
-                    <span>PESO Y REPS</span>
+        {!activity && (
+          <>
+            {records.length > 0 && (
+              <section className="card wd-records">
+                <h2 className="section-title">Récords nuevos</h2>
+                {records.map((r, i) => (
+                  <div key={i} className="wd-record">
+                    <span className="wd-pr">PR</span>
+                    <div>
+                      <b>{findExercise(r.exerciseId)?.name ?? 'Ejercicio'}</b>
+                      <span>
+                        {r.label}: {r.value}
+                      </span>
+                    </div>
                   </div>
-                  {e.sets.map((s, k) => {
-                    if (s.type !== 'warmup') n++
-                    return (
-                      <div key={k} className="wd-set">
-                        <SetBadge type={s.type} n={n} />
-                        <span className="tnum">{fmtSet(s, ex?.type ?? 'weight_reps')}</span>
+                ))}
+              </section>
+            )}
+
+            <section className="wd-list">
+              <h2 className="section-title">Entreno</h2>
+              {w.exercises.map((e, i) => {
+                const ex = findExercise(e.exerciseId)
+                let n = 0
+                return (
+                  <article key={i} className="wd-ex">
+                    <button className="wd-ex-head" onClick={() => navigate(`/ejercicio/${encodeURIComponent(e.exerciseId)}`)}>
+                      <ExerciseThumb exercise={ex} />
+                      <b>{ex?.name ?? 'Ejercicio no disponible'}</b>
+                    </button>
+                    {e.notes && <p className="wd-notes">{e.notes}</p>}
+                    <div className="wd-sets">
+                      <div className="wd-set head">
+                        <span>SERIE</span>
+                        <span>PESO Y REPS</span>
                       </div>
-                    )
-                  })}
-                </div>
-              </article>
-            )
-          })}
-        </section>
+                      {e.sets.map((s, k) => {
+                        if (s.type !== 'warmup') n++
+                        return (
+                          <div key={k} className="wd-set">
+                            <SetBadge type={s.type} n={n} />
+                            <span className="tnum">{fmtSet(s, ex?.type ?? 'weight_reps')}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </article>
+                )
+              })}
+            </section>
+          </>
+        )}
       </div>
 
       <Sheet open={menu === 'main'} onClose={() => setMenu(null)} title={w.title}>
