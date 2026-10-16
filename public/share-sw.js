@@ -1,10 +1,12 @@
 /* Heavy · "Compartir con Heavy" desde otras apps de Android (Web Share Target).
-   Recibe un archivo GPX/TCX (o un enlace de Strava), lo guarda un momento
-   y abre la pantalla "Nueva actividad". Se carga en el service worker
+   Recibe archivos GPX/TCX, fotos y enlaces (p. ej. de Strava), los guarda un momento
+   y abre la pantalla adecuada. Se carga en el service worker
    (vite.config.ts → workbox.importScripts). */
 
 const SHARE_CACHE = 'heavy-share'
-const SHARED_FILE = 'shared-activity-file'
+
+const isRoute = (f) => /\.(gpx|tcx)$/i.test(f.name || '') || /gpx|tcx|xml/i.test(f.type || '')
+const isImage = (f) => /^image\//i.test(f.type || '') || /\.(jpe?g|png|webp|heic|heif)$/i.test(f.name || '')
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url)
@@ -15,15 +17,25 @@ self.addEventListener('fetch', (event) => {
       const scope = self.registration.scope
       try {
         const form = await event.request.formData()
-        const file = form.get('file')
-        if (file && typeof file !== 'string' && file.size > 0) {
-          const cache = await caches.open(SHARE_CACHE)
-          await cache.put(scope + SHARED_FILE, new Response(file, { headers: { 'x-file-name': encodeURIComponent(file.name || 'actividad.gpx') } }))
-          return Response.redirect(scope + '#/actividad/nueva?compartido=1', 303)
+        const files = form.getAll('file').filter((f) => f && typeof f !== 'string' && f.size > 0)
+        const text = [form.get('title'), form.get('text'), form.get('url')].filter(Boolean).join(' ').slice(0, 1000)
+
+        // Se guarda todo en la caché; la app lo recoge al abrirse (src/lib/shared.ts)
+        const cache = await caches.open(SHARE_CACHE)
+        for (const req of await cache.keys()) await cache.delete(req)
+        const list = []
+        for (let i = 0; i < files.length && i < 12; i++) {
+          const f = files[i]
+          const key = scope + 'shared/' + i
+          await cache.put(key, new Response(f, { headers: { 'content-type': f.type || 'application/octet-stream' } }))
+          list.push({ key, name: f.name || 'archivo', type: f.type || '' })
         }
-        // Enlace compartido desde la app de Strava
-        const text = [form.get('url'), form.get('text'), form.get('title')].filter(Boolean).join(' ')
-        return Response.redirect(scope + '#/actividad/nueva?enlace=' + encodeURIComponent(text.slice(0, 500)), 303)
+        await cache.put(scope + 'shared/index', new Response(JSON.stringify({ files: list, text, at: Date.now() })))
+
+        const route = files.some(isRoute)
+        const images = files.some(isImage)
+        const target = route || (!images && text) ? '#/actividad/nueva?compartido=1' : '#/compartir'
+        return Response.redirect(scope + target, 303)
       } catch {
         return Response.redirect(scope + '#/actividad/nueva', 303)
       }

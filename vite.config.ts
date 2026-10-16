@@ -24,7 +24,7 @@ export default defineConfig({
         orientation: 'portrait',
         background_color: '#000000',
         theme_color: '#000000',
-        // Aparece en el menú "Compartir" de Android para recibir GPX/TCX y enlaces de Strava
+        // Aparece en el menú "Compartir" de Android para recibir GPX/TCX, fotos y enlaces de Strava
         share_target: {
           action: '/heavy/compartir',
           method: 'POST',
@@ -45,6 +45,8 @@ export default defineConfig({
                   'application/xml',
                   'text/xml',
                   'application/octet-stream',
+                  // Fotos para añadirlas a un entreno o actividad
+                  'image/*',
                 ],
               },
             ],

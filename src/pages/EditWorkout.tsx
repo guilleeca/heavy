@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router'
+import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { useData } from '../data/context'
 import { supabase } from '../lib/supabase'
 import { toast } from '../lib/toast'
@@ -12,6 +12,7 @@ import { ExercisePicker } from '../components/ExercisePicker'
 import { ExerciseThumb, PageHeader, Sheet, SheetItem, Spinner } from '../components/ui'
 import { WhenFields } from '../components/WhenFields'
 import { useCropQueue } from '../components/useCropQueue'
+import { clearShared, readShared } from '../lib/shared'
 import { SetBadge, SetTable } from './RoutineEditor'
 import './RoutineEditor.css'
 import './FinishWorkout.css'
@@ -71,6 +72,25 @@ function Editor({ workout: w }: { workout: Workout }) {
   const [kept, setKept] = useState<string[]>(w.photos)
   const [added, setAdded] = useState<File[]>([])
   const crop = useCropQueue((f) => setAdded((a) => [...a, f]))
+
+  // Fotos compartidas con Heavy desde otra app (menú Compartir de Android)
+  const [params, setParams] = useSearchParams()
+  const fromShare = params.get('compartido') === '1'
+  useEffect(() => {
+    if (!fromShare) return
+    ;(async () => {
+      const got = await readShared()
+      const room = 6 - w.photos.length
+      if (got?.images.length) {
+        if (room <= 0) toast('Este entreno ya tiene 6 fotos: quita alguna para añadir otras')
+        else crop.enqueue(got.images.slice(0, room))
+      }
+      await clearShared()
+      setParams({}, { replace: true })
+    })()
+    // Solo al llegar
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromShare])
   const [signed, setSigned] = useState<Record<string, string>>({})
   const [picker, setPicker] = useState<null | { replace?: number }>(null)
   const [menu, setMenu] = useState<Menu>(null)

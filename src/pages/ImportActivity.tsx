@@ -16,6 +16,7 @@ import {
   type ParsedActivity,
 } from '../lib/gpx'
 import { fmtDuration, uid } from '../lib/workouts'
+import { clearShared, readShared } from '../lib/shared'
 import { Icon } from '../components/Icon'
 import { PageHeader, Sheet, SheetItem } from '../components/ui'
 import { StaticMap } from '../components/StaticMap'
@@ -62,31 +63,46 @@ export function ImportActivity() {
     }
   }
 
-  // Llegada desde "Compartir con Heavy" (archivo o enlace de Strava)
+  // Llegada desde "Compartir con Heavy": GPX/TCX, fotos y enlaces de Strava
   const [params, setParams] = useSearchParams()
-  const [link, setLink] = useState(() => params.get('enlace') ?? '')
+  const [link, setLink] = useState('')
   const [opened, setOpened] = useState<null | 'direct' | 'page'>(null)
   const shared = params.get('compartido') === '1'
   useEffect(() => {
     if (!shared) return
     ;(async () => {
-      try {
-        const cache = await caches.open('heavy-share')
-        const key = new URL('shared-activity-file', document.baseURI).href
-        const res = await cache.match(key)
-        if (res) {
-          await onFile(await res.blob())
-          await cache.delete(key)
-        }
-      } catch {
-        setError('No se pudo leer el archivo compartido. Elígelo a mano.')
+      const got = await readShared()
+      if (got) {
+        if (got.routes[0]) await onFile(got.routes[0])
+        if (got.images.length) crop.enqueue(got.images.slice(0, 6))
+        if (stravaGpxLink(got.text)) setLink(got.text.trim())
+        else if (!got.routes.length && got.text) setError('Lo compartido no es un GPX ni un enlace de Strava.')
       }
+      await clearShared()
       setParams({}, { replace: true })
     })()
     // Solo al llegar
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [shared])
   const strava = stravaGpxLink(link)
+
+  function download(target: { url: string; direct: boolean }) {
+    window.open(target.url, '_blank', 'noopener')
+    setOpened(target.direct ? 'direct' : 'page')
+  }
+
+  /** Un toque: lee el enlace copiado en Strava y abre la descarga */
+  async function pasteAndDownload() {
+    try {
+      const text = await navigator.clipboard.readText()
+      setLink(text.trim())
+      const target = stravaGpxLink(text)
+      if (target) download(target)
+      else toast('Lo copiado no es un enlace de Strava')
+    } catch {
+      toast('No se pudo leer el portapapeles: mantén pulsado en la caja y pega')
+    }
+  }
 
   const duplicate =
     when &&
@@ -175,17 +191,15 @@ export function ImportActivity() {
                 aria-label="Enlace de la actividad de Strava"
                 onChange={(e) => (setLink(e.target.value), setOpened(null))}
               />
-              <button
-                className="btn btn-primary"
-                disabled={!strava}
-                onClick={() => {
-                  if (!strava) return
-                  window.open(strava.url, '_blank', 'noopener')
-                  setOpened(strava.direct ? 'direct' : 'page')
-                }}
-              >
-                Descargar GPX
-              </button>
+              {strava || link ? (
+                <button className="btn btn-primary" disabled={!strava} onClick={() => strava && download(strava)}>
+                  Descargar GPX
+                </button>
+              ) : (
+                <button className="btn btn-primary" onClick={pasteAndDownload}>
+                  Pegar
+                </button>
+              )}
             </div>
             {link && !strava && <p className="ia-note">Ese enlace no parece de una actividad de Strava.</p>}
             {opened === 'direct' && (

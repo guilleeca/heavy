@@ -1,0 +1,80 @@
+.sp {
+  min-height: 100dvh;
+}
+
+.sp-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 32px) max(16px, env(safe-area-inset-left, 0px));
+}
+
+.sp-photos {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.sp-photos img {
+  flex: none;
+  width: 120px;
+  height: 120px;
+  border-radius: var(--r-md);
+  object-fit: cover;
+  background: var(--surface-2);
+}
+
+.sp-note {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-2);
+}
+
+.sp-list {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.sp-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  padding: 8px 14px;
+  border-top: 1px solid var(--line);
+  text-align: left;
+  color: var(--text-2);
+}
+
+.sp-item:first-child {
+  border-top: 0;
+}
+
+.sp-emoji {
+  font-size: 22px;
+}
+
+.sp-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sp-text b {
+  color: var(--text);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sp-text small {
+  font-size: 13px;
+}

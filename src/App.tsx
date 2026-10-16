@@ -12,6 +12,7 @@ import { RoutineDetail } from './pages/RoutineDetail'
 import { RoutineEditor } from './pages/RoutineEditor'
 import { ImportHevy } from './pages/ImportHevy'
 import { ImportActivity } from './pages/ImportActivity'
+import { SharePage } from './pages/SharePage'
 import { Statistics } from './pages/Statistics'
 import { Calendar } from './pages/Calendar'
 import { Measures } from './pages/Measures'
@@ -47,6 +48,7 @@ const router = createHashRouter([
   { path: '/explorar', element: <Explore /> },
   { path: '/importar', element: <ImportHevy /> },
   { path: '/actividad/nueva', element: <ImportActivity /> },
+  { path: '/compartir', element: <SharePage /> },
   { path: '/estadisticas', element: <Statistics /> },
   { path: '/calendario', element: <Calendar /> },
   { path: '/medidas', element: <Measures /> },
