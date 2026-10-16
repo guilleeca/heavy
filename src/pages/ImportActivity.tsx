@@ -87,22 +87,40 @@ export function ImportActivity() {
   }, [shared])
   const strava = stravaGpxLink(link)
 
-  function download(target: { url: string; direct: boolean }) {
-    openInBrowser(target.url)
-    setOpened(target.direct ? 'direct' : 'page')
+  const [resolving, setResolving] = useState(false)
+
+  async function download(target: { url: string; direct: boolean }) {
+    if (target.direct) {
+      openInBrowser(target.url)
+      setOpened('direct')
+      return
+    }
+    // Enlace corto (strava.app.link): Supabase averigua a qué actividad lleva
+    setResolving(true)
+    const { data, error } = await supabase.functions.invoke('strava-link', { body: { url: target.url } })
+    setResolving(false)
+    const id = (data as { id?: string } | null)?.id
+    if (id) {
+      setLink(`https://www.strava.com/activities/${id}`)
+      openInBrowser(`https://www.strava.com/activities/${id}/export_gpx`)
+      setOpened('direct')
+    } else {
+      toast(error ? 'Falta activar la función strava-link en Supabase' : 'No se encontró la actividad de ese enlace')
+    }
   }
 
   /** Un toque: lee el enlace copiado en Strava y abre la descarga */
   async function pasteAndDownload() {
+    let text = ''
     try {
-      const text = await navigator.clipboard.readText()
-      setLink(text.trim())
-      const target = stravaGpxLink(text)
-      if (target) download(target)
-      else toast('Lo copiado no es un enlace de Strava')
+      text = await navigator.clipboard.readText()
     } catch {
-      toast('No se pudo leer el portapapeles: mantén pulsado en la caja y pega')
+      return toast('No se pudo leer el portapapeles: mantén pulsado en la caja y pega')
     }
+    setLink(text.trim())
+    const target = stravaGpxLink(text)
+    if (target) await download(target)
+    else toast('Lo copiado no es un enlace de Strava')
   }
 
   const duplicate =
@@ -193,8 +211,8 @@ export function ImportActivity() {
                 onChange={(e) => (setLink(e.target.value), setOpened(null))}
               />
               {strava || link ? (
-                <button className="btn btn-primary" disabled={!strava} onClick={() => strava && download(strava)}>
-                  Descargar GPX
+                <button className="btn btn-primary" disabled={!strava || resolving} onClick={() => strava && download(strava)}>
+                  {resolving ? 'Buscando…' : 'Descargar GPX'}
                 </button>
               ) : (
                 <button className="btn btn-primary" onClick={pasteAndDownload}>
