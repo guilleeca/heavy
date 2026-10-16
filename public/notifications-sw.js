@@ -2,6 +2,8 @@
    Se carga dentro del service worker (vite.config.ts → workbox.importScripts). */
 
 self.addEventListener('notificationclick', (event) => {
+  // Solo la notificación del entreno en curso (las demás las gestiona push-sw.js)
+  if (event.notification.tag !== 'heavy-workout') return
   const action = event.action // '', 'rest-minus', 'rest-plus', 'rest-skip', 'complete'
   // Los botones no cierran la notificación: la app la actualiza en el momento
   // (así se pueden pulsar varias veces seguidas). Tocarla en sí sí la cierra.

@@ -15,6 +15,7 @@ import {
 } from '../lib/workouts'
 import { ActiveWorkoutContext, type ActiveWorkoutApi, type FinishInput } from './context'
 import { restDoneAlert } from './feedback'
+import { sendPush } from '../lib/push'
 import { askNotificationPermission, closeWorkoutNotification, nextPending, showWorkoutNotification } from './notify'
 
 const storageKey = (userId: string) => `heavy.active.${userId}`
@@ -70,23 +71,25 @@ export function ActiveWorkoutProvider({ children }: { children: ReactNode }) {
       })
       const current = a.exercises.find((e) => e.sets.some((s) => !s.done)) ?? a.exercises.at(-1)
       // Las consultas de Supabase solo se envían al hacer .then()/await
-      return Promise.resolve(supabase.from('live_sessions').upsert({
-        user_id: userId,
-        title: a.title,
-        started_at: new Date(a.startedAt).toISOString(),
-        updated_at: new Date().toISOString(),
-        snapshot: {
-          current: current?.exerciseId,
-          setsDone: a.exercises.reduce((n, e) => n + e.sets.filter((x) => x.done).length, 0),
-          setsTotal: a.exercises.reduce((n, e) => n + e.sets.length, 0),
-          volume: workoutVolume(
-            a.exercises.map((e) => ({ exerciseId: e.exerciseId, sets: e.sets.filter((x) => x.done) })),
-            findExercise,
-          ),
-          exercises,
-          state: a,
-        },
-      })).then(() => undefined)
+      return Promise.resolve(
+        supabase.from('live_sessions').upsert({
+          user_id: userId,
+          title: a.title,
+          started_at: new Date(a.startedAt).toISOString(),
+          updated_at: new Date().toISOString(),
+          snapshot: {
+            current: current?.exerciseId,
+            setsDone: a.exercises.reduce((n, e) => n + e.sets.filter((x) => x.done).length, 0),
+            setsTotal: a.exercises.reduce((n, e) => n + e.sets.length, 0),
+            volume: workoutVolume(
+              a.exercises.map((e) => ({ exerciseId: e.exerciseId, sets: e.sets.filter((x) => x.done) })),
+              findExercise,
+            ),
+            exercises,
+            state: a,
+          },
+        }),
+      ).then(() => undefined)
     },
     [userId, findExercise],
   )
@@ -100,7 +103,23 @@ export function ActiveWorkoutProvider({ children }: { children: ReactNode }) {
     if (!active || !userId) return
     window.clearTimeout(liveTimer.current)
     liveTimer.current = window.setTimeout(() => {
-      if (!finishing.current) void publish(active)
+      if (finishing.current) return
+      void publish(active).then(() => {
+        // Aviso push al otro, una sola vez por entreno y solo al empezarlo
+        let notified: string | null = null
+        try {
+          notified = localStorage.getItem('heavy.liveNotified')
+        } catch {
+          /* sin almacenamiento */
+        }
+        if (notified === active.id || Date.now() - active.startedAt > 10 * 60_000) return
+        try {
+          localStorage.setItem('heavy.liveNotified', active.id)
+        } catch {
+          /* sin almacenamiento */
+        }
+        sendPush('live', userId)
+      })
     }, 1500)
     return () => window.clearTimeout(liveTimer.current)
   }, [active, userId, publish])
@@ -175,8 +194,7 @@ export function ActiveWorkoutProvider({ children }: { children: ReactNode }) {
 
   const mutate = useCallback((fn: (a: ActiveWorkout) => ActiveWorkout) => setActive((a) => (a ? fn(a) : a)), [])
   const mutateEx = useCallback(
-    (ei: number, fn: (e: LiveExercise) => LiveExercise) =>
-      mutate((a) => ({ ...a, exercises: a.exercises.map((e, i) => (i === ei ? fn(e) : e)) })),
+    (ei: number, fn: (e: LiveExercise) => LiveExercise) => mutate((a) => ({ ...a, exercises: a.exercises.map((e, i) => (i === ei ? fn(e) : e)) })),
     [mutate],
   )
 
@@ -198,25 +216,33 @@ export function ActiveWorkoutProvider({ children }: { children: ReactNode }) {
   /** Marcar / desmarcar una serie (rellena valores vacíos y arranca el descanso) */
   const toggleIn = useCallback(
     (a: ActiveWorkout, ei: number, si: number): ActiveWorkout => {
-          const e = a.exercises[ei]
-          const s = e.sets[si]
-          const done = !s.done
-          // Si la serie se marca sin escribir nada, se rellenan con lo de la vez anterior / la rutina
-          const eff = done ? effective(s, previousSets(workouts, userId, e.exerciseId)[si]) : null
-          const exercises = a.exercises.map((x, i) =>
-            i === ei
-              ? {
-                  ...x,
-                  sets: x.sets.map((y, k) =>
-                    k === si ? { ...y, done, weight: y.weight ?? eff?.weight ?? null, reps: y.reps ?? eff?.reps ?? null, duration: y.duration ?? eff?.duration ?? null } : y,
-                  ),
-                }
-              : x,
-          )
-          // Al completar una serie arranca el descanso del ejercicio
-          const rest = done && e.restSeconds > 0 ? { endsAt: Date.now() + e.restSeconds * 1000, total: e.restSeconds } : done ? null : a.rest
-          return { ...a, exercises, rest }
-        },
+      const e = a.exercises[ei]
+      const s = e.sets[si]
+      const done = !s.done
+      // Si la serie se marca sin escribir nada, se rellenan con lo de la vez anterior / la rutina
+      const eff = done ? effective(s, previousSets(workouts, userId, e.exerciseId)[si]) : null
+      const exercises = a.exercises.map((x, i) =>
+        i === ei
+          ? {
+              ...x,
+              sets: x.sets.map((y, k) =>
+                k === si
+                  ? {
+                      ...y,
+                      done,
+                      weight: y.weight ?? eff?.weight ?? null,
+                      reps: y.reps ?? eff?.reps ?? null,
+                      duration: y.duration ?? eff?.duration ?? null,
+                    }
+                  : y,
+              ),
+            }
+          : x,
+      )
+      // Al completar una serie arranca el descanso del ejercicio
+      const rest = done && e.restSeconds > 0 ? { endsAt: Date.now() + e.restSeconds * 1000, total: e.restSeconds } : done ? null : a.rest
+      return { ...a, exercises, rest }
+    },
     [workouts, userId],
   )
 
@@ -365,6 +391,7 @@ export function ActiveWorkoutProvider({ children }: { children: ReactNode }) {
         setActive(null)
         await supabase.from('live_sessions').delete().eq('user_id', userId)
         finishing.current = false
+        sendPush('workout', id)
         await refresh()
         return id
       },

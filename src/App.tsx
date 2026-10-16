@@ -15,6 +15,7 @@ import { ImportHevy } from './pages/ImportHevy'
 import { ImportActivity } from './pages/ImportActivity'
 import { SharePage } from './pages/SharePage'
 import { Routes } from './pages/Routes'
+import { NotificationSettings } from './pages/NotificationSettings'
 import { RouteDetail } from './pages/RouteDetail'
 import { Spinner } from './components/ui'
 
@@ -58,6 +59,7 @@ const router = createHashRouter([
   { path: '/actividad/nueva', element: <ImportActivity /> },
   { path: '/compartir', element: <SharePage /> },
   { path: '/rutas', element: <Routes /> },
+  { path: '/ajustes/notificaciones', element: <NotificationSettings /> },
   { path: '/ruta/:id', element: <RouteDetail /> },
   {
     path: '/ruta/:id/seguir',

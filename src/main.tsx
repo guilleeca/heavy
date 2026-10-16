@@ -24,6 +24,11 @@ registerSW({
   },
 })
 
+// Al tocar una notificación push con la app abierta, se va a esa pantalla
+navigator.serviceWorker?.addEventListener('message', (e) => {
+  if (e.data?.type === 'heavy-open' && typeof e.data.url === 'string') window.location.hash = e.data.url.replace(/^#/, '')
+})
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthProvider>

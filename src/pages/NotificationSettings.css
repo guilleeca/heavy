@@ -1,0 +1,107 @@
+.ns {
+  min-height: 100dvh;
+}
+
+.ns-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 8px max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 32px) max(16px, env(safe-area-inset-left, 0px));
+}
+
+.ns-device {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ns-device > div {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ns-device span {
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.ns-list {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.ns-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--line);
+}
+
+.ns-row:first-child {
+  border-top: 0;
+}
+
+.ns-row > span {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ns-row b {
+  font-weight: 500;
+}
+
+.ns-row small {
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+/* Interruptor */
+.ns-row input {
+  appearance: none;
+  flex: none;
+  position: relative;
+  width: 48px;
+  height: 28px;
+  border-radius: 14px;
+  background: var(--surface-3);
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+.ns-row input::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s;
+}
+
+.ns-row input:checked {
+  background: var(--success);
+}
+
+.ns-row input:checked::after {
+  transform: translateX(20px);
+}
+
+.ns-note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-3);
+}

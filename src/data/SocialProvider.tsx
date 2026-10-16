@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { supabase } from '../lib/supabase'
 import { toast } from '../lib/toast'
+import { sendPush } from '../lib/push'
 import { useData } from './context'
 import { SocialContext, type Comment, type Like } from './social'
 
@@ -13,10 +14,7 @@ export function SocialProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!userId) return
     let cancelled = false
-    Promise.all([
-      supabase.from('workout_likes').select('*'),
-      supabase.from('workout_comments').select('*').order('created_at'),
-    ]).then(([l, c]) => {
+    Promise.all([supabase.from('workout_likes').select('*'), supabase.from('workout_comments').select('*').order('created_at')]).then(([l, c]) => {
       if (cancelled) return
       if (!l.error) setLikes(l.data as Like[])
       if (!c.error) setComments(c.data as Comment[])
@@ -61,6 +59,7 @@ export function SocialProvider({ children }: { children: ReactNode }) {
         const row = { workout_id: workoutId, user_id: userId, created_at: new Date().toISOString() }
         setLikes((list) => [...list, row])
         const { error } = await supabase.from('workout_likes').insert({ workout_id: workoutId })
+        if (!error) sendPush('like', workoutId)
         if (error && error.code !== '23505') {
           setLikes((list) => list.filter((l) => !(l.workout_id === workoutId && l.user_id === userId)))
           toast('No se pudo dar me gusta')
@@ -80,6 +79,7 @@ export function SocialProvider({ children }: { children: ReactNode }) {
     }
     const row = data as Comment
     setComments((list) => [...list.filter((x) => x.id !== row.id), row])
+    sendPush('comment', row.id)
     return true
   }, [])
 

@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { enablePush, pushEnabledHere, pushSupported } from '../lib/push'
+import { toast } from '../lib/toast'
 import { Link } from 'react-router'
 import { useData } from '../data/context'
 import { fmtClock } from '../lib/workouts'
@@ -42,6 +44,8 @@ export function Feed() {
           )
         })}
 
+        <PushBanner />
+
         {!ready ? (
           <Spinner />
         ) : workouts.length === 0 ? (
@@ -64,5 +68,49 @@ export function Feed() {
         )}
       </div>
     </>
+  )
+}
+
+/** Invitación a activar las notificaciones (hasta que se activen o se cierre) */
+function PushBanner() {
+  const [show, setShow] = useState(false)
+  useEffect(() => {
+    let dismissed = false
+    try {
+      dismissed = localStorage.getItem('heavy.pushBanner') === 'no'
+    } catch {
+      /* sin almacenamiento */
+    }
+    if (!dismissed && pushSupported()) pushEnabledHere().then((on) => setShow(!on))
+  }, [])
+  if (!show) return null
+  const close = () => {
+    try {
+      localStorage.setItem('heavy.pushBanner', 'no')
+    } catch {
+      /* sin almacenamiento */
+    }
+    setShow(false)
+  }
+  return (
+    <section className="card feed-push">
+      <Icon name="bell" size={24} />
+      <p>Activa las notificaciones para enterarte cuando tu hermano entrene, te dé un me gusta o te comente.</p>
+      <div>
+        <button
+          className="btn btn-primary"
+          onClick={async () => {
+            const error = await enablePush()
+            if (error) toast(error)
+            else setShow(false)
+          }}
+        >
+          Activar
+        </button>
+        <button className="btn" onClick={close}>
+          Ahora no
+        </button>
+      </div>
+    </section>
   )
 }

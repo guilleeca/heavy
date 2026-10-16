@@ -29,3 +29,24 @@
   color: var(--text-3);
   flex: none;
 }
+
+.feed-push {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.feed-push > svg {
+  color: var(--accent);
+}
+
+.feed-push p {
+  margin: 0;
+  font-size: 15px;
+}
+
+.feed-push div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}

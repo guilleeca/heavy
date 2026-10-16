@@ -61,8 +61,8 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,svg,woff2}'],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
-        // Botones de la notificación del entreno y "Compartir con Heavy"
-        importScripts: ['notifications-sw.js', 'share-sw.js'],
+        // Notificación del entreno, "Compartir con Heavy" y notificaciones push
+        importScripts: ['notifications-sw.js', 'share-sw.js', 'push-sw.js'],
         navigateFallback: '/heavy/index.html',
         runtimeCaching: [
           {

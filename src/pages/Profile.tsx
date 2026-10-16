@@ -62,8 +62,7 @@ export function Profile() {
   const max = Math.max(1, ...weeks.map((w) => w.value))
   const shownWeek = picked ?? 11
   const weekValue = weeks[shownWeek].value
-  const headline =
-    metric === 'Duración' ? fmtDuration(weekValue) : metric === 'Volumen' ? fmtVolume(weekValue) : `${weekValue} reps`
+  const headline = metric === 'Duración' ? fmtDuration(weekValue) : metric === 'Volumen' ? fmtVolume(weekValue) : `${weekValue} reps`
   const weekLabel =
     shownWeek === 11 ? 'esta semana' : `semana del ${weeks[shownWeek].start.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}`
   return (
@@ -79,6 +78,9 @@ export function Profile() {
         {menu && (
           <div className="pf-menu" role="menu">
             <p>{session?.user.email}</p>
+            <button role="menuitem" className="plain" onClick={() => navigate('/ajustes/notificaciones')}>
+              Notificaciones
+            </button>
             <button role="menuitem" className="plain" onClick={() => navigate('/importar')}>
               Importar de Hevy
             </button>
@@ -96,9 +98,18 @@ export function Profile() {
           <div className="pf-info">
             <strong>{name}</strong>
             <div className="pf-stats">
-              <div><span>Entrenamientos</span><b className="tnum">{mine.length}</b></div>
-              <div><span>Seguidores</span><b className="tnum">0</b></div>
-              <div><span>Siguiendo</span><b className="tnum">0</b></div>
+              <div>
+                <span>Entrenamientos</span>
+                <b className="tnum">{mine.length}</b>
+              </div>
+              <div>
+                <span>Seguidores</span>
+                <b className="tnum">0</b>
+              </div>
+              <div>
+                <span>Siguiendo</span>
+                <b className="tnum">0</b>
+              </div>
             </div>
           </div>
         </section>
@@ -171,7 +182,12 @@ export function Profile() {
           )}
         </section>
       </div>
-      {editing && <EditProfile onClose={() => setEditing(false)} initial={{ full_name: name, username: profile?.username ?? '', bio: profile?.bio ?? '', avatar_url: profile?.avatar_url ?? null }} />}
+      {editing && (
+        <EditProfile
+          onClose={() => setEditing(false)}
+          initial={{ full_name: name, username: profile?.username ?? '', bio: profile?.bio ?? '', avatar_url: profile?.avatar_url ?? null }}
+        />
+      )}
     </>
   )
 }
@@ -193,7 +209,6 @@ function EditProfile({
   const [cropping, setCropping] = useState<File | null>(null)
   const [saving, setSaving] = useState(false)
   const shown = photo?.url ?? (removePhoto ? null : form.avatar_url)
-
 
   async function save() {
     const username = form.username.trim().toLowerCase()
@@ -233,11 +248,16 @@ function EditProfile({
           <div className="pf-photo-btns">
             <label className="btn">
               Cambiar foto
-              <input type="file" accept="image/*" hidden onChange={(e) => {
+              <input
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={(e) => {
                   const f = e.target.files?.[0]
                   if (f) setCropping(f)
                   e.target.value = ''
-                }} />
+                }}
+              />
             </label>
             {shown && (
               <button className="btn pf-photo-remove" onClick={() => (setPhoto(null), setRemovePhoto(true))}>
@@ -262,7 +282,13 @@ function EditProfile({
         </label>
         <label>
           <span>Biografía</span>
-          <textarea value={form.bio} maxLength={160} rows={3} placeholder="Algo sobre ti" onChange={(e) => setForm({ ...form, bio: e.target.value })} />
+          <textarea
+            value={form.bio}
+            maxLength={160}
+            rows={3}
+            placeholder="Algo sobre ti"
+            onChange={(e) => setForm({ ...form, bio: e.target.value })}
+          />
         </label>
         <button className="btn btn-primary btn-block" disabled={saving} onClick={save}>
           {saving ? 'Guardando…' : 'Guardar'}

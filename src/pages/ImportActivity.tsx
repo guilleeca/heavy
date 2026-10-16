@@ -20,6 +20,7 @@ import {
 } from '../lib/gpx'
 import { fmtDuration, uid } from '../lib/workouts'
 import { clearShared, readShared } from '../lib/shared'
+import { sendPush } from '../lib/push'
 import { Icon } from '../components/Icon'
 import { PageHeader, Sheet, SheetItem } from '../components/ui'
 import { StaticMap } from '../components/StaticMap'
@@ -193,6 +194,7 @@ export function ImportActivity() {
     if (error) {
       return toast(error.message.includes('kind') ? 'Falta ejecutar 008_rutas.sql en Supabase' : 'No se pudo guardar la actividad')
     }
+    sendPush('workout', id)
     await refresh()
     navigate(`/entreno/${id}?nuevo=1`, { replace: true })
   }
