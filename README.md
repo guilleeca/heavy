@@ -54,6 +54,12 @@ src/data/exercises.json  biblioteca de ejercicios (generada desde ExerciseDB)
 10. Strava (opcional)
 11. Enviar el entreno al Excel del entrenador (pendiente)
 
+### Pendiente: Heavy en el menú "Compartir" de Android
+
+Está configurado (share_target en vite.config.ts y public/share-sw.js) y funciona en el navegador de pruebas,
+pero en el móvil de Guillermo Heavy no aparece al compartir desde la Galería ni desde Strava. Revisar con
+chrome://webapks si Chrome la instaló como WebAPK y qué "Share Target" tiene registrado.
+
 ### Pendiente: Excel del entrenador
 
 Al terminar un entreno, un botón que pase las series al Excel compartido del entrenador.

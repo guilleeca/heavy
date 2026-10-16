@@ -11,6 +11,7 @@ import {
   KIND_LABEL,
   paceLabel,
   parseActivityFile,
+  openInBrowser,
   stravaGpxLink,
   type ActivityKind,
   type ParsedActivity,
@@ -87,7 +88,7 @@ export function ImportActivity() {
   const strava = stravaGpxLink(link)
 
   function download(target: { url: string; direct: boolean }) {
-    window.open(target.url, '_blank', 'noopener')
+    openInBrowser(target.url)
     setOpened(target.direct ? 'direct' : 'page')
   }
 
@@ -204,8 +205,8 @@ export function ImportActivity() {
             {link && !strava && <p className="ia-note">Ese enlace no parece de una actividad de Strava.</p>}
             {opened === 'direct' && (
               <p className="ia-note ok">
-                Se está descargando el GPX. Cuando acabe, toca <b>Compartir</b> en la descarga y elige <b>Heavy</b>, o vuelve aquí y pulsa{' '}
-                <b>Elegir archivo</b>. Si en vez de descargarse te pide entrar, inicia sesión en Strava en el navegador y repite.
+                Chrome está descargando el GPX. Cuando acabe, vuelve aquí y pulsa <b>Elegir archivo GPX o TCX</b> (está en Descargas). Si en vez de
+                descargarse te pide entrar, inicia sesión en Strava en Chrome una vez y repite.
               </p>
             )}
             {opened === 'page' && (

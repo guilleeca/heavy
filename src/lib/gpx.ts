@@ -258,3 +258,15 @@ export function stravaGpxLink(text: string): { url: string; direct: boolean } | 
   const short = text.match(/https?:\/\/(?:strava\.app\.link|www\.strava\.com|strava\.com)\/\S+/)?.[0]
   return short ? { url: short, direct: false } : null
 }
+
+/** En Android, un enlace de strava.com lo abre la app de Strava en vez de descargar el archivo.
+    Con un enlace "intent" se fuerza a abrirlo en Chrome, que sí descarga el GPX. */
+export function openInBrowser(url: string) {
+  if (/Android/i.test(navigator.userAgent)) {
+    const u = new URL(url)
+    const intent = `intent://${u.host}${u.pathname}${u.search}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(url)};end`
+    window.location.href = intent
+  } else {
+    window.open(url, '_blank', 'noopener')
+  }
+}
