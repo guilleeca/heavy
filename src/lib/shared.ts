@@ -39,3 +39,24 @@ export async function clearShared() {
     /* nada que borrar */
   }
 }
+
+/** Guarda lo compartido (app nativa) igual que lo hace share-sw.js y dice a qué pantalla ir */
+export async function storeShared(files: File[], text: string): Promise<string> {
+  try {
+    await clearShared()
+    const cache = await caches.open(CACHE)
+    const list: { key: string; name: string; type: string }[] = []
+    for (let i = 0; i < files.length && i < 12; i++) {
+      const f = files[i]
+      const key = base() + 'shared/' + i
+      await cache.put(key, new Response(f, { headers: { 'content-type': f.type || 'application/octet-stream' } }))
+      list.push({ key, name: f.name || 'archivo', type: f.type || '' })
+    }
+    await cache.put(base() + 'shared/index', new Response(JSON.stringify({ files: list, text, at: Date.now() })))
+  } catch {
+    return '#/actividad/nueva'
+  }
+  const route = files.some(isRouteFile)
+  const images = files.some(isImageFile)
+  return route || (!images && text) ? '#/actividad/nueva?compartido=1' : '#/compartir'
+}

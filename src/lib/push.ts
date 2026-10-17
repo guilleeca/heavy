@@ -1,6 +1,7 @@
 /* Notificaciones push: activar en este móvil y avisar al otro tras cada acción. */
 
 import { supabase } from './supabase'
+import { isNative, nativeDisablePush, nativeEnablePush, nativePushEnabled } from '../native'
 
 // Clave pública VAPID (la privada está solo en los secretos de Supabase)
 const VAPID_PUBLIC_KEY = 'BLtxzB6_N_BV-V_7KEhs-_KxBEfULxehfGVH3SFYWM-mRP141L4qplOj8qGyRymO1I9OvYpzjOdZg0Y6t9h60B4'
@@ -9,7 +10,8 @@ export type PushKind = 'live' | 'workout' | 'like' | 'comment'
 export type NotifyPrefs = { live: boolean; workouts: boolean; likes: boolean; comments: boolean }
 export const DEFAULT_PREFS: NotifyPrefs = { live: true, workouts: true, likes: true, comments: true }
 
-export const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window
+// En la app de Android van por Firebase; en el navegador, por Web Push
+export const pushSupported = () => isNative || ('serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window)
 
 function keyBytes(base64: string) {
   const pad = '='.repeat((4 - (base64.length % 4)) % 4)
@@ -19,6 +21,7 @@ function keyBytes(base64: string) {
 
 /** ¿Este móvil ya recibe notificaciones? */
 export async function pushEnabledHere() {
+  if (isNative) return nativePushEnabled()
   if (!pushSupported() || Notification.permission !== 'granted') return false
   const reg = await navigator.serviceWorker.ready
   return !!(await reg.pushManager.getSubscription())
@@ -26,6 +29,7 @@ export async function pushEnabledHere() {
 
 /** Activa las notificaciones en este móvil (pide permiso si hace falta) */
 export async function enablePush(): Promise<string | null> {
+  if (isNative) return nativeEnablePush()
   if (!pushSupported()) return 'Este navegador no admite notificaciones'
   if (Notification.permission === 'denied') return 'Las notificaciones están bloqueadas: actívalas en los ajustes de Heavy en Android'
   if ((await Notification.requestPermission()) !== 'granted') return 'Sin permiso no se pueden enviar avisos'
@@ -45,6 +49,7 @@ export async function enablePush(): Promise<string | null> {
 }
 
 export async function disablePush() {
+  if (isNative) return nativeDisablePush()
   if (!pushSupported()) return
   const reg = await navigator.serviceWorker.ready
   const sub = await reg.pushManager.getSubscription()

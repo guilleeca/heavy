@@ -1,4 +1,5 @@
 import { toast } from '../lib/toast'
+import { isNative } from '../native'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { Icon, type IconName } from '../components/Icon'
@@ -11,6 +12,9 @@ import { WorkoutCard } from '../components/WorkoutCard'
 import { Sheet } from '../components/ui'
 import { ImageCropper } from '../components/ImageCropper'
 import './Profile.css'
+
+// APK de la app de Android (lo publica .github/workflows/android.yml)
+const APK_URL = 'https://github.com/guilleeca/heavy/releases/download/android/heavy.apk'
 
 const METRICS = ['Duración', 'Volumen', 'Repeticiones', 'Distancia', 'Desnivel'] as const
 const FILTERS = [
@@ -107,6 +111,11 @@ export function Profile() {
             <button role="menuitem" className="plain" onClick={() => navigate('/importar')}>
               Importar de Hevy
             </button>
+            {!isNative && /Android/i.test(navigator.userAgent) && (
+              <a role="menuitem" className="plain pf-menu-link" href={APK_URL}>
+                Descargar la app de Android
+              </a>
+            )}
             <button role="menuitem" onClick={() => supabase.auth.signOut()}>
               Cerrar sesión
             </button>

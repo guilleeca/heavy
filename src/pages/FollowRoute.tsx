@@ -4,6 +4,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useRoutes } from '../data/useRoutes'
 import { fmtKm, nearestOnRoute, trackDistances, type SavedRoute } from '../lib/gpx'
+import { isNative, nativeAlert, watchPosition } from '../native'
 import { keepScreenOn } from '../workout/feedback'
 import { Icon } from '../components/Icon'
 import { Spinner } from '../components/ui'
@@ -86,15 +87,10 @@ function Follow({ route }: { route: SavedRoute }) {
   }, [route])
 
   // ---------- GPS ----------
+  // En la app de Android sigue funcionando con la pantalla apagada (servicio con aviso fijo)
   useEffect(() => {
-    if (!('geolocation' in navigator)) {
-      // oxlint-disable-next-line react/set-state-in-effect
-      setGpsError('Este móvil no tiene GPS disponible')
-      return
-    }
-    const watch = navigator.geolocation.watchPosition(
-      (p) => {
-        const f: Fix = { lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy, heading: p.coords.heading }
+    return watchPosition(
+      (f) => {
         setGpsError(null)
         setFix(f)
 
@@ -112,7 +108,10 @@ function Follow({ route }: { route: SavedRoute }) {
         const near = nearestOnRoute(route.track, f.lat, f.lon, progressRef.current)
         if (near.distance > Math.max(OFF_ROUTE_M, f.acc * 1.5)) {
           offCount.current++
-          if (offCount.current === 2) navigator.vibrate?.([300, 150, 300])
+          if (offCount.current === 2) {
+            if (isNative && progressRef.current > 0) void nativeAlert('Te has salido de la ruta', `Estás a ${Math.round(near.distance)} m del camino`)
+            else navigator.vibrate?.([300, 150, 300])
+          }
           if (offCount.current >= 2) setOff(Math.round(near.distance))
         } else {
           offCount.current = 0
@@ -121,10 +120,8 @@ function Follow({ route }: { route: SavedRoute }) {
           setProgress(near.index)
         }
       },
-      (e) => setGpsError(e.code === 1 ? 'Permite la ubicación para Heavy en los ajustes' : 'Buscando señal GPS…'),
-      { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 },
+      (msg) => setGpsError(msg),
     )
-    return () => navigator.geolocation.clearWatch(watch)
   }, [route])
 
   // ---------- pantalla encendida mientras se sigue la ruta ----------

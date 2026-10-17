@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Heavy</string>
+    <string name="title_activity_main">Heavy</string>
+    <string name="package_name">es.heavy.app</string>
+    <string name="custom_url_scheme">es.heavy.app</string>
+    <!-- Aviso fijo mientras se sigue una ruta con el GPS -->
+    <string name="capacitor_background_geolocation_notification_channel_name">Seguir ruta</string>
+    <string name="capacitor_background_geolocation_notification_icon">drawable/ic_stat_heavy</string>
+    <string name="capacitor_background_geolocation_notification_color">#1C8CFF</string>
+</resources>

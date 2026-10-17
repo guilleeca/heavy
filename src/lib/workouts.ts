@@ -161,7 +161,7 @@ export function newRecords(done: Workout, history: Workout[], find: (id: string)
 
 /* ---------- formato ---------- */
 
-export const fmtKg = (n: number) => (Math.round(n * 10) / 10).toLocaleString('es-ES', { maximumFractionDigits: 1 })
+export const fmtKg = (n: number) => (Math.round(n * 100) / 100).toLocaleString('es-ES', { maximumFractionDigits: 2 })
 
 /** 1:05:09 / 23:41 */
 export function fmtClock(totalSeconds: number) {

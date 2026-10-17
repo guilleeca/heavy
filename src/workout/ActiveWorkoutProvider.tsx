@@ -18,6 +18,7 @@ import {
 import { ActiveWorkoutContext, type ActiveWorkoutApi, type FinishInput } from './context'
 import { restDoneAlert } from './feedback'
 import { pushEnabledHere, sendPush } from '../lib/push'
+import { isNative } from '../native'
 import { askNotificationPermission, closeWorkoutNotification, nextPending, showWorkoutNotification } from './notify'
 
 const storageKey = (userId: string) => `heavy.active.${userId}`
@@ -198,7 +199,8 @@ export function ActiveWorkoutProvider({ children }: { children: ReactNode }) {
   // móvil esté bloqueado y la app dormida. Se reprograma cada vez que cambia el descanso.
   const [pushHere, setPushHere] = useState(false)
   useEffect(() => {
-    void pushEnabledHere().then(setPushHere)
+    // En la app de Android el aviso se programa en el propio móvil (notify.ts)
+    if (!isNative) void pushEnabledHere().then(setPushHere)
   }, [active?.id])
   const alarmAt = useRef<number | null>(null)
   const restEnd = active?.rest?.endsAt ?? null
@@ -289,11 +291,12 @@ export function ActiveWorkoutProvider({ children }: { children: ReactNode }) {
     const delay = restDone || document.visibilityState === 'hidden' ? 0 : 400
     notifyTimer.current = window.setTimeout(() => void showWorkoutNotification(active, findExercise, restDone), delay)
     // Durante el descanso, la cuenta atrás de la notificación baja segundo a segundo
-    const tick = active.rest
-      ? window.setInterval(() => {
-          if (active.rest && active.rest.endsAt > Date.now()) void showWorkoutNotification(active, findExercise)
-        }, 1000)
-      : undefined
+    const tick =
+      active.rest && !isNative
+        ? window.setInterval(() => {
+            if (active.rest && active.rest.endsAt > Date.now()) void showWorkoutNotification(active, findExercise)
+          }, 1000)
+        : undefined
     return () => {
       window.clearTimeout(notifyTimer.current)
       window.clearInterval(tick)
@@ -302,7 +305,6 @@ export function ActiveWorkoutProvider({ children }: { children: ReactNode }) {
 
   // Botones de la notificación (llegan desde el service worker)
   useEffect(() => {
-    if (!('serviceWorker' in navigator)) return
     const onMessage = (ev: MessageEvent) => {
       const msg = ev.data as { type?: string; action?: string }
       if (msg?.type !== 'heavy-action') return
@@ -326,8 +328,15 @@ export function ActiveWorkoutProvider({ children }: { children: ReactNode }) {
         }
       })
     }
-    navigator.serviceWorker.addEventListener('message', onMessage)
-    return () => navigator.serviceWorker.removeEventListener('message', onMessage)
+    // Botones de la notificación nativa (app de Android)
+    const onNative = (e: Event) =>
+      onMessage(new MessageEvent('message', { data: { type: 'heavy-action', action: (e as CustomEvent<string>).detail } }))
+    navigator.serviceWorker?.addEventListener('message', onMessage)
+    window.addEventListener('heavy-action', onNative)
+    return () => {
+      navigator.serviceWorker?.removeEventListener('message', onMessage)
+      window.removeEventListener('heavy-action', onNative)
+    }
   }, [toggleIn])
 
   const api: ActiveWorkoutApi = useMemo(

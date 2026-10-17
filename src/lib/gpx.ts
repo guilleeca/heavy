@@ -1,6 +1,9 @@
 /* Rutas y carreras: leer archivos GPX/TCX (Strava, Garmin, Wikiloc, relojes…)
    y calcular distancia, desnivel, ritmo y parciales por kilómetro. */
 
+import { Browser } from '@capacitor/browser'
+import { isNative } from '../native'
+
 export type ActivityKind = 'run' | 'hike' | 'walk' | 'ride'
 export type Kind = 'gym' | ActivityKind
 
@@ -272,6 +275,11 @@ export function stravaGpxLink(text: string): { url: string; direct: boolean } | 
 /** En Android, un enlace de strava.com lo abre la app de Strava en vez de descargar el archivo.
     Con un enlace "intent" se fuerza a abrirlo en Chrome, que sí descarga el GPX. */
 export function openInBrowser(url: string) {
+  // En la app de Android: pestaña de Chrome (comparte la sesión de Strava)
+  if (isNative) {
+    void Browser.open({ url })
+    return
+  }
   if (/Android/i.test(navigator.userAgent)) {
     const u = new URL(url)
     const intent = `intent://${u.host}${u.pathname}${u.search}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(url)};end`

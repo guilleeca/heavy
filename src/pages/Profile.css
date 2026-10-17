@@ -256,3 +256,12 @@
   flex-direction: row;
   justify-content: center;
 }
+
+.pf-menu .pf-menu-link {
+  display: block;
+  padding: 12px 10px;
+  border-radius: var(--r-sm);
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+}

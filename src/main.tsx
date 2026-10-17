@@ -6,6 +6,10 @@ import './pages/Login.css'
 import { App } from './App'
 import { AuthProvider } from './auth/AuthProvider'
 import { registerSW } from 'virtual:pwa-register'
+import { initNative } from './native'
+
+// Dentro de la app de Android: login, Atrás, compartir y notificaciones nativas
+initNative()
 
 // Actualizaciones: al publicar una versión nueva, la app se recarga sola con ella.
 // Se comprueba al abrirla, al volver a ella desde segundo plano y cada 30 minutos.

@@ -1,5 +1,7 @@
 /* Aviso al terminar el descanso: vibración + dos pitidos */
 
+import { isNative, nativeKeepAwake } from '../native'
+
 let ctx: AudioContext | null = null
 
 /** Desbloquea el audio en el primer toque (los navegadores lo exigen) */
@@ -38,6 +40,7 @@ export function restDoneAlert() {
 
 /** Mantiene la pantalla encendida mientras se entrena (si el móvil lo permite) */
 export async function keepScreenOn(): Promise<() => void> {
+  if (isNative) return nativeKeepAwake()
   try {
     const lock = await navigator.wakeLock?.request('screen')
     return () => void lock?.release().catch(() => {})

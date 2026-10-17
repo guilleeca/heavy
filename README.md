@@ -47,18 +47,27 @@ src/data/exercises.json  biblioteca de ejercicios (generada desde ExerciseDB)
 3. ~~Supabase: cuentas para los dos y base de datos~~
 4. ~~Ejercicios y rutinas (carpetas, notas por ejercicio)~~
 5. ~~Entreno en directo (y ver el del otro en tiempo real)~~
-6. Rutas y carreras: importar GPX, mapa, altitud y parciales
+6. ~~Rutas y carreras: importar GPX, mapa, altitud y parciales~~
 7. ~~Inicio: canal con me gusta y comentarios~~
 8. ~~Perfil: estadísticas, calendario, medidas y récords~~
 9. ~~Importar el historial de Hevy (CSV)~~
-10. Strava (opcional)
-11. Enviar el entreno al Excel del entrenador (pendiente)
+10. ~~Strava (enlaces y GPX, sin API)~~
+11. ~~App de Android (Capacitor)~~
+12. Enviar el entreno al Excel del entrenador (pendiente)
 
-### Pendiente: Heavy en el menú "Compartir" de Android
+## App de Android
 
-Está configurado (share_target en vite.config.ts y public/share-sw.js) y funciona en el navegador de pruebas,
-pero en el móvil de Guillermo Heavy no aparece al compartir desde la Galería ni desde Strava. Revisar con
-chrome://webapks si Chrome la instaló como WebAPK y qué "Share Target" tiene registrado.
+`android/` es un proyecto de Capacitor que carga la web publicada (`capacitor.config.ts` → `server.url`),
+así que cada `git push` actualiza también la app. Lo nativo está en `src/native/`: login de Google en el
+navegador del sistema, botón Atrás, "Compartir con Heavy", notificación del entreno y aviso de descanso
+programado, avisos push por Firebase y GPS con la pantalla apagada al seguir rutas.
+
+- El APK lo compila `.github/workflows/android.yml` y lo publica en Releases → `android` → `heavy.apk`
+  (en el móvil: Perfil → ⚙ → Descargar la app de Android).
+- Solo hay que instalar un APK nuevo cuando cambia algo de `android/`, `capacitor.config.ts` o los plugins.
+- Secretos de GitHub: `HEAVY_KEYSTORE_PASSWORD` y `GOOGLE_SERVICES_JSON`. Secreto de Supabase: `FCM_SERVICE_ACCOUNT`.
+- La firma (`android/heavy-release.p12`) la crea el workflow la primera vez. No borrarla: sin ella Android
+  no deja actualizar la app instalada.
 
 ### Pendiente: Excel del entrenador
 

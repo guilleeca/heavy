@@ -86,6 +86,8 @@ Deno.serve(async (req) => {
           Deno.env.get('VAPID_PRIVATE_KEY') ?? '',
         )
         const { data: subs } = await admin.from('push_subscriptions').select('endpoint, p256dh, auth').eq('user_id', caller)
+        // La app de Android programa su propio aviso: aquí solo los navegadores
+        const webSubs = (subs ?? []).filter((x) => !x.endpoint.startsWith('fcm:'))
         const message = JSON.stringify({
           type: 'rest',
           title: '¡Descanso terminado!',
@@ -96,7 +98,7 @@ Deno.serve(async (req) => {
         })
         let sent = 0
         await Promise.all(
-          (subs ?? []).map(async (s) => {
+          webSubs.map(async (s) => {
             try {
               // Urgencia alta: Android lo entrega al momento aunque esté en reposo
               await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, message, {

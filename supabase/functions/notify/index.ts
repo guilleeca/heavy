@@ -4,7 +4,8 @@
 // existe de verdad y es de quien llama, y se avisa a los demás según sus preferencias.
 //
 // Desplegar en Supabase → Edge Functions → Deploy a new function → Via Editor → nombre "notify".
-// Secretos necesarios (Edge Functions → Secrets): VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT.
+// Secretos necesarios (Edge Functions → Secrets): VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT
+// (navegador) y FCM_SERVICE_ACCOUNT (app de Android: el JSON de la cuenta de servicio de Firebase).
 // SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY los pone Supabase automáticamente.
 
 import webpush from 'npm:web-push@3.6.7'
@@ -52,14 +53,13 @@ Deno.serve(async (req) => {
     const tried: string[] = []
     for (const [label, key] of candidates) {
       const client = createClient(url, key, { auth: { persistSession: false } })
-      const { data, error, status } = await client.from('push_subscriptions').select('endpoint').limit(5)
-      tried.push(`${label}(${key.slice(0, 9)}…): ${status} ${error?.message ?? `ok, ${data?.length} filas`}`)
-      if (!error && data?.length) {
+      const { error, status } = await client.from('push_subscriptions').select('endpoint').limit(1)
+      tried.push(`${label}: ${status} ${error?.message ?? 'ok'}`)
+      if (!error) {
         admin = client
         break
       }
     }
-    console.log(JSON.stringify({ claves: tried }))
     if (!admin) return json({ error: 'Ninguna clave de administrador funciona', claves: tried }, 500)
     // Quién llama (sesión de la app)
     const token = (req.headers.get('Authorization') ?? '').replace('Bearer ', '')
@@ -153,8 +153,11 @@ Deno.serve(async (req) => {
     if (!subs?.length) return json({ sent: 0, reason: 'el destinatario no ha activado las notificaciones en ningún móvil' })
     let sent = 0
     const errors: string[] = []
+    const fcm = subs.filter((s) => s.endpoint.startsWith('fcm:'))
+    const web = subs.filter((s) => !s.endpoint.startsWith('fcm:'))
+    // Navegador (Web Push)
     await Promise.all(
-      (subs ?? []).map(async (s) => {
+      web.map(async (s) => {
         try {
           await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, JSON.stringify(message), { TTL: 3600 })
           sent++
@@ -166,8 +169,84 @@ Deno.serve(async (req) => {
         }
       }),
     )
+    // App de Android (Firebase Cloud Messaging)
+    if (fcm.length) {
+      const access = await fcmAccess()
+      if (!access) errors.push('Falta el secreto FCM_SERVICE_ACCOUNT para avisar a la app de Android')
+      else
+        await Promise.all(
+          fcm.map(async (s) => {
+            const r = await fcmSend(access, s.endpoint.slice(4), message!)
+            if (r.ok) sent++
+            else {
+              errors.push(`fcm ${r.status} ${r.error}`)
+              if (r.status === 404 || /UNREGISTERED|INVALID_ARGUMENT/.test(r.error)) await admin.from('push_subscriptions').delete().eq('endpoint', s.endpoint)
+            }
+          }),
+        )
+    }
     return json({ sent, errors })
   } catch (e) {
     return json({ error: String(e) }, 500)
   }
 })
+
+/* ---------- Firebase Cloud Messaging (app de Android) ---------- */
+
+type ServiceAccount = { client_email: string; private_key: string; project_id: string }
+
+const b64url = (data: ArrayBuffer | string) =>
+  btoa(typeof data === 'string' ? data : String.fromCharCode(...new Uint8Array(data)))
+    .replace(/=+$/, '')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+
+/** Token de acceso de Google a partir de la cuenta de servicio (JWT firmado con su clave) */
+async function fcmAccess(): Promise<{ token: string; project: string } | null> {
+  const raw = Deno.env.get('FCM_SERVICE_ACCOUNT')
+  if (!raw) return null
+  const sa = JSON.parse(raw) as ServiceAccount
+  const now = Math.floor(Date.now() / 1000)
+  const head = b64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }))
+  const claims = b64url(
+    JSON.stringify({
+      iss: sa.client_email,
+      scope: 'https://www.googleapis.com/auth/firebase.messaging',
+      aud: 'https://oauth2.googleapis.com/token',
+      iat: now,
+      exp: now + 3600,
+    }),
+  )
+  const pem = sa.private_key.replace(/-----[^-]+-----/g, '').replace(/\s+/g, '')
+  const der = Uint8Array.from(atob(pem), (c) => c.charCodeAt(0))
+  const key = await crypto.subtle.importKey('pkcs8', der, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign'])
+  const sig = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, new TextEncoder().encode(`${head}.${claims}`))
+  const res = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: `${head}.${claims}.${b64url(sig)}` }),
+  })
+  const data = (await res.json()) as { access_token?: string }
+  return data.access_token ? { token: data.access_token, project: sa.project_id } : null
+}
+
+async function fcmSend(access: { token: string; project: string }, token: string, m: Message) {
+  const res = await fetch(`https://fcm.googleapis.com/v1/projects/${access.project}/messages:send`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${access.token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      message: {
+        token,
+        notification: { title: m.title, body: m.body },
+        data: { url: m.url, title: m.title, body: m.body },
+        android: {
+          priority: 'high',
+          notification: { channel_id: 'social', icon: 'ic_stat_heavy', color: '#1c8cff', tag: m.tag },
+        },
+      },
+    }),
+  })
+  if (res.ok) return { ok: true, status: 200, error: '' }
+  const text = await res.text()
+  return { ok: false, status: res.status, error: text.slice(0, 200) }
+}
