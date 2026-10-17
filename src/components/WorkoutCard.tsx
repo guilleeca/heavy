@@ -1,9 +1,9 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { useData } from '../data/context'
 import { MUSCLE_LABEL, type Muscle } from '../lib/exercises'
 import { setsByMuscle } from '../lib/stats'
-import { supabase } from '../lib/supabase'
+import { usePhotoUrls } from '../lib/photos'
 import { fmtDuration, fmtVolume, fmtWhen, isActivity, newRecords, type Workout } from '../lib/workouts'
 import { fmtKm, fmtPace, KIND_EMOJI, KIND_LABEL, paceLabel, type Kind } from '../lib/gpx'
 import { StaticMap } from './StaticMap'
@@ -13,27 +13,8 @@ import { Icon } from './Icon'
 import { ExerciseThumb } from './ui'
 import { WorkoutSocial } from './WorkoutSocial'
 import { PhotoViewer } from './PhotoViewer'
+import { MusclesSheet } from './MusclesSheet'
 import './WorkoutCard.css'
-
-/** Fotos privadas: enlaces firmados de 1 hora (se piden una vez por tarjeta) */
-function usePhotoUrls(paths: string[]) {
-  const key = paths.join('|')
-  const [urls, setUrls] = useState<string[]>([])
-  useEffect(() => {
-    if (!key) return
-    let cancelled = false
-    supabase.storage
-      .from('workout-photos')
-      .createSignedUrls(key.split('|'), 3600)
-      .then(({ data }) => {
-        if (!cancelled) setUrls((data ?? []).map((d) => d.signedUrl).filter(Boolean) as string[])
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [key])
-  return key ? urls : []
-}
 
 /** Tarjeta de entreno para Inicio y Perfil (estilo Hevy): fotos, resumen y músculos en un carrusel. */
 export const WorkoutCard = memo(function WorkoutCard({ workout }: { workout: Workout }) {
@@ -52,6 +33,7 @@ export const WorkoutCard = memo(function WorkoutCard({ workout }: { workout: Wor
   const track = useRef<HTMLDivElement>(null)
   const [slide, setSlide] = useState(0)
   const [viewer, setViewer] = useState<number | null>(null)
+  const [musclesOpen, setMusclesOpen] = useState(false)
   // Las fotos van primero; mientras se cargan se reserva su hueco
   const activity = isActivity(workout)
   const kind = (workout.kind ?? 'gym') as Kind
@@ -138,7 +120,9 @@ export const WorkoutCard = memo(function WorkoutCard({ workout }: { workout: Wor
           >
             {workout.photos.map((path, i) => (
               <button key={path} className="wc-slide wc-photo" onClick={() => photos[i] && setViewer(i)} aria-label={`Ver foto ${i + 1} del entreno`}>
-                {photos[i] && <img src={photos[i]} alt="" loading="lazy" decoding="async" />}
+                {photos[i] && (
+                  <img src={photos[i]} alt="" crossOrigin="anonymous" decoding="async" onLoad={(e) => e.currentTarget.classList.add('in')} />
+                )}
               </button>
             ))}
 
@@ -173,7 +157,7 @@ export const WorkoutCard = memo(function WorkoutCard({ workout }: { workout: Wor
                   )}
                 </button>
 
-                <button className="wc-slide wc-muscles" onClick={open} aria-label="Músculos trabajados">
+                <button className="wc-slide wc-muscles" onClick={() => setMusclesOpen(true)} aria-label="Ver los músculos trabajados">
                   <span className="wc-slide-title">Músculos trabajados</span>
                   <BodyMap primary={[]} weights={weights} className="wc-body" />
                   <span className="wc-chips">
@@ -198,6 +182,7 @@ export const WorkoutCard = memo(function WorkoutCard({ workout }: { workout: Wor
       )}
 
       <WorkoutSocial workout={workout} />
+      <MusclesSheet workout={workout} open={musclesOpen} onClose={() => setMusclesOpen(false)} />
       {viewer != null && <PhotoViewer urls={photos} start={viewer} onClose={() => setViewer(null)} />}
     </article>
   )

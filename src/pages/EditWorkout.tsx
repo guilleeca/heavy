@@ -17,6 +17,7 @@ import { SetBadge, SetTable } from './RoutineEditor'
 import './RoutineEditor.css'
 import './FinishWorkout.css'
 import '../components/CustomExerciseForm.css'
+import { usePhotoUrls } from '../lib/photos'
 import './EditWorkout.css'
 import './ImportActivity.css'
 
@@ -99,7 +100,6 @@ function Editor({ workout: w }: { workout: Workout }) {
     // Solo al llegar
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [fromShare])
-  const [signed, setSigned] = useState<Record<string, string>>({})
   const [picker, setPicker] = useState<null | { replace?: number }>(null)
   const [menu, setMenu] = useState<Menu>(null)
   const [saving, setSaving] = useState(false)
@@ -113,13 +113,8 @@ function Editor({ workout: w }: { workout: Workout }) {
   const gainM = Math.round(parseFloat(gainText.replace(',', '.')) || 0)
 
   // Fotos ya subidas: enlaces firmados para verlas
-  useEffect(() => {
-    if (!w.photos.length) return
-    supabase.storage
-      .from('workout-photos')
-      .createSignedUrls(w.photos, 3600)
-      .then(({ data }) => setSigned(Object.fromEntries((data ?? []).map((d) => [d.path ?? '', d.signedUrl ?? '']))))
-  }, [w.photos])
+  const signedList = usePhotoUrls(w.photos)
+  const signed: Record<string, string> = Object.fromEntries(w.photos.map((p, i) => [p, signedList[i] ?? '']))
 
   const exercises = fromItems(items)
   const volume = workoutVolume(exercises, findExercise)
@@ -269,7 +264,7 @@ function Editor({ workout: w }: { workout: Workout }) {
         <section className="fw-photos">
           {kept.map((p) => (
             <div key={p} className="fw-photo">
-              {signed[p] ? <img src={signed[p]} alt="" /> : <span className="ew-ph" />}
+              {signed[p] ? <img src={signed[p]} alt="" crossOrigin="anonymous" /> : <span className="ew-ph" />}
               <button aria-label="Quitar foto" onClick={() => setKept((k) => k.filter((x) => x !== p))}>
                 <Icon name="close" size={16} stroke={2.5} />
               </button>

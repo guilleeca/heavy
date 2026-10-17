@@ -27,39 +27,54 @@
 }
 
 .exd-media {
-  aspect-ratio: 1;
-  max-width: 100%;
-  border-radius: var(--r-md);
+  height: min(42dvh, 340px);
+  margin: -16px calc(-1 * max(16px, env(safe-area-inset-left, 0px))) 0;
   background: #ffffff;
-  overflow: hidden;
   display: grid;
   place-items: center;
+  overflow: hidden;
 }
 
 .exd-media img {
-  width: 100%;
   height: 100%;
+  width: auto;
+  max-width: 100%;
   object-fit: contain;
 }
 
 .exd-media-empty {
+  height: 160px;
+  margin: 0;
+  border-radius: var(--r-md);
   background: var(--surface);
   color: var(--text-3);
   gap: 8px;
-  aspect-ratio: 16 / 9;
 }
 
 .exd-name {
   margin: 0;
   font-size: 22px;
   font-weight: 700;
+  line-height: 1.25;
   text-wrap: balance;
+}
+
+/* Músculos: muñeco a la izquierda y datos a la derecha */
+.exd-muscles {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+}
+
+.exd-map {
+  width: 100%;
 }
 
 .exd-facts {
   margin: 0;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
 }
 
@@ -70,37 +85,31 @@
 }
 
 .exd-facts dt {
-  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
   color: var(--text-2);
 }
 
 .exd-facts dd {
   margin: 0;
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 15px;
+  overflow-wrap: anywhere;
 }
 
-.exd-legend {
-  display: flex;
-  justify-content: center;
-  gap: 18px;
-  margin-top: 8px;
-  font-size: 13px;
-  color: var(--text-2);
-}
-
-.exd-legend i {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
+.exd-facts i {
+  width: 9px;
+  height: 9px;
   border-radius: 3px;
-  margin-right: 4px;
 }
 
-.exd-legend .p {
+.exd-facts .p {
   background: var(--muscle);
 }
 
-.exd-legend .s {
+.exd-facts .s {
   background: var(--muscle-soft);
 }
 

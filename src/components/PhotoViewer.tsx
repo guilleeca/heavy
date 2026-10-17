@@ -38,7 +38,13 @@ export function PhotoViewer({ urls, start = 0, onClose }: { urls: string[]; star
   }, [])
 
   return createPortal(
-    <div className="pv" role="dialog" aria-modal="true" aria-label="Fotos del entreno" style={{ background: `rgba(0, 0, 0, ${1 - Math.min(0.6, Math.abs(dy) / 400)})` }}>
+    <div
+      className="pv"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Fotos del entreno"
+      style={{ background: `rgba(0, 0, 0, ${1 - Math.min(0.6, Math.abs(dy) / 400)})` }}
+    >
       <header className="pv-top">
         <span className="tnum">{urls.length > 1 ? `${index + 1} / ${urls.length}` : ''}</span>
         <button className="pv-close" aria-label="Cerrar" onClick={onClose}>
@@ -66,7 +72,7 @@ export function PhotoViewer({ urls, start = 0, onClose }: { urls: string[]; star
       >
         {urls.map((u, i) => (
           <div key={u} className="pv-slide">
-            <img src={u} alt={`Foto ${i + 1}`} draggable={false} />
+            <img src={u} alt={`Foto ${i + 1}`} draggable={false} crossOrigin="anonymous" />
           </div>
         ))}
       </div>

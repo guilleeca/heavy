@@ -5,7 +5,7 @@ import { useData } from '../data/context'
 import { supabase } from '../lib/supabase'
 import { EQUIPMENT_LABEL, MUSCLE_LABEL, TYPE_LABEL, gifUrl } from '../lib/exercises'
 import { BodyMap } from '../components/BodyMap'
-import { PageHeader, Sheet, Spinner} from '../components/ui'
+import { PageHeader, Sheet, Spinner } from '../components/ui'
 import { Icon } from '../components/Icon'
 import { ExerciseHistory, ExerciseProgress } from '../components/ExerciseProgress'
 import { exerciseSessions } from '../lib/stats'
@@ -64,7 +64,7 @@ export function ExerciseDetail() {
   return (
     <div className="exd">
       <PageHeader
-        title={ex.name}
+        title="Ejercicio"
         right={
           canDelete && (
             <button className="header-btn" aria-label="Eliminar ejercicio" onClick={() => setConfirm(true)}>
@@ -86,71 +86,68 @@ export function ExerciseDetail() {
           <ExerciseHistory exercise={ex} sessions={sessions} />
         ) : (
           <>
-        {src ? (
-          <div className="exd-media">
-            <img src={src} alt={`Cómo se hace: ${ex.name}`} />
-          </div>
-        ) : (
-          <div className="exd-media exd-media-empty">
-            <Icon name="dumbbell" size={48} stroke={1.4} />
-            <span>Ejercicio personalizado</span>
-          </div>
-        )}
-
-        <h2 className="exd-name">{ex.name}</h2>
-
-        {tab === 'resumen' ? (
-          <>
-            <dl className="exd-facts">
-              <div>
-                <dt>Principal</dt>
-                <dd>{MUSCLE_LABEL[ex.muscle]}</dd>
+            {src ? (
+              <div className="exd-media">
+                <img src={src} alt={`Cómo se hace: ${ex.name}`} />
               </div>
-              {ex.secondary.length > 0 && (
-                <div>
-                  <dt>Secundarios</dt>
-                  <dd>{ex.secondary.map((m) => MUSCLE_LABEL[m]).join(', ')}</dd>
-                </div>
-              )}
-              <div>
-                <dt>Equipamiento</dt>
-                <dd>{EQUIPMENT_LABEL[ex.equipment]}</dd>
-              </div>
-              <div>
-                <dt>Registro</dt>
-                <dd>{TYPE_LABEL[ex.type]}</dd>
-              </div>
-            </dl>
-            <div className="card">
-              <BodyMap primary={[ex.muscle]} secondary={ex.secondary} />
-              <div className="exd-legend">
-                <span>
-                  <i className="p" /> Principal
-                </span>
-                <span>
-                  <i className="s" /> Secundario
-                </span>
-              </div>
-            </div>
-            {sessions.length ? (
-              <ExerciseProgress exercise={ex} sessions={sessions} />
             ) : (
-              <p className="exd-note">El progreso y los récords de este ejercicio aparecerán cuando lo hagas en un entreno.</p>
+              <div className="exd-media exd-media-empty">
+                <Icon name="dumbbell" size={48} stroke={1.4} />
+                <span>Ejercicio personalizado</span>
+              </div>
             )}
-          </>
-        ) : ex.custom ? (
-          <p className="exd-note">Los ejercicios personalizados no tienen instrucciones.</p>
-        ) : steps == null ? (
-          <Spinner />
-        ) : steps.length ? (
-          <ol className="exd-steps">
-            {steps.map((s, i) => (
-              <li key={i}>{s}</li>
-            ))}
-          </ol>
-        ) : (
-          <p className="exd-note">No se pudieron cargar las instrucciones. Revisa la conexión.</p>
-        )}
+
+            <h2 className="exd-name">{ex.name}</h2>
+
+            {tab === 'resumen' ? (
+              <>
+                <section className="card exd-muscles">
+                  <BodyMap primary={[ex.muscle]} secondary={ex.secondary} className="exd-map" />
+                  <dl className="exd-facts">
+                    <div>
+                      <dt>
+                        <i className="p" /> Principal
+                      </dt>
+                      <dd>{MUSCLE_LABEL[ex.muscle]}</dd>
+                    </div>
+                    {ex.secondary.length > 0 && (
+                      <div>
+                        <dt>
+                          <i className="s" /> Secundarios
+                        </dt>
+                        <dd>{ex.secondary.map((m) => MUSCLE_LABEL[m]).join(', ')}</dd>
+                      </div>
+                    )}
+                    <div>
+                      <dt>Equipamiento</dt>
+                      <dd>{EQUIPMENT_LABEL[ex.equipment]}</dd>
+                    </div>
+                    <div>
+                      <dt>Se registra</dt>
+                      <dd>{TYPE_LABEL[ex.type]}</dd>
+                    </div>
+                  </dl>
+                </section>
+                {sessions.length > 0 && <h2 className="section-title">Progreso</h2>}
+                {sessions.length ? (
+                  <ExerciseProgress exercise={ex} sessions={sessions} />
+                ) : (
+                  <p className="exd-note">El progreso y los récords de este ejercicio aparecerán cuando lo hagas en un entreno.</p>
+                )}
+              </>
+            ) : ex.custom ? (
+              <p className="exd-note">Los ejercicios personalizados no tienen instrucciones.</p>
+            ) : steps == null ? (
+              <Spinner />
+            ) : steps.length ? (
+              <ol className="exd-steps">
+                {steps.map((s, i) => (
+                  <li key={i}>{s}</li>
+                ))}
+              </ol>
+            ) : (
+              <p className="exd-note">No se pudieron cargar las instrucciones. Revisa la conexión.</p>
+            )}
           </>
         )}
       </div>

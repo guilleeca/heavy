@@ -1,0 +1,73 @@
+.ms {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0 16px 8px;
+}
+
+.ms-body {
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+.ms-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ms-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ms-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ms-row b {
+  font-weight: 600;
+}
+
+.ms-val {
+  font-size: 13px;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.ms-bar {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.ms-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--muscle);
+}
+
+.ms-list small {
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.ms-extra {
+  color: var(--text-3);
+}
+
+.ms-note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-3);
+}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { useData } from '../data/context'
 import { supabase } from '../lib/supabase'
@@ -11,6 +11,7 @@ import { Icon } from '../components/Icon'
 import { ExerciseThumb, PageHeader, Sheet, SheetItem, Spinner } from '../components/ui'
 import { SetBadge } from './RoutineEditor'
 import { Avatar } from './RoutineDetail'
+import { usePhotoUrls } from '../lib/photos'
 import { WorkoutSocial } from '../components/WorkoutSocial'
 import { PhotoViewer } from '../components/PhotoViewer'
 import './WorkoutDetail.css'
@@ -21,27 +22,13 @@ export function WorkoutDetail() {
   const [params] = useSearchParams()
   const navigate = useNavigate()
   const { workouts, findExercise, profiles, userId, ready, refresh } = useData()
-  const [photoUrls, setPhotoUrls] = useState<string[]>([])
   const [menu, setMenu] = useState<'main' | 'delete' | null>(null)
   const [viewer, setViewer] = useState<number | null>(null)
   const w = workouts.find((x) => x.id === id)
   const fresh = params.get('nuevo') === '1'
 
-  // Fotos privadas: enlaces temporales firmados
-  const photoKey = w?.photos.join('|') ?? ''
-  useEffect(() => {
-    if (!photoKey) return
-    let cancelled = false
-    supabase.storage
-      .from('workout-photos')
-      .createSignedUrls(photoKey.split('|'), 3600)
-      .then(({ data }) => {
-        if (!cancelled) setPhotoUrls((data ?? []).map((d) => d.signedUrl).filter(Boolean) as string[])
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [photoKey])
+  // Fotos privadas: enlaces firmados (recordados en el móvil)
+  const photoUrls = usePhotoUrls(w?.photos ?? [])
 
   if (!ready) return <Spinner />
   if (!w) {
@@ -111,7 +98,7 @@ export function WorkoutDetail() {
           <div className="wd-photos">
             {w.photos.map((path, i) => (
               <button key={path} onClick={() => photoUrls[i] && setViewer(i)} aria-label={`Ver foto ${i + 1} del entreno`}>
-                {photoUrls[i] && <img src={photoUrls[i]} alt="" />}
+                {photoUrls[i] && <img src={photoUrls[i]} alt="" crossOrigin="anonymous" />}
               </button>
             ))}
           </div>
