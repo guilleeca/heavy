@@ -147,3 +147,82 @@
   font-size: 13px;
   color: var(--text-2);
 }
+
+.st-mode {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+.st-mode button {
+  height: 38px;
+  border-radius: calc(var(--r-md) - 4px);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.st-mode button[aria-pressed='true'] {
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+.st-count {
+  color: var(--text-3);
+  font-size: 12px;
+}
+
+.st-records {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.st-record {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 60px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--line);
+  text-align: left;
+}
+
+.st-record:first-child {
+  border-top: 0;
+}
+
+.st-record > span {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.st-record b {
+  font-weight: 500;
+}
+
+.st-record small {
+  font-size: 13px;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.st-record strong {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.st-kind {
+  grid-template-columns: 140px 1fr auto;
+}

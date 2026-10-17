@@ -5,13 +5,19 @@ import { Icon, type IconName } from '../components/Icon'
 import { useAuth } from '../auth/context'
 import { supabase } from '../lib/supabase'
 import { useData } from '../data/context'
-import { fmtDuration, fmtVolume } from '../lib/workouts'
+import { fmtDuration, fmtVolume, isActivity } from '../lib/workouts'
+import { fmtKmShort, fmtMeters } from '../lib/activityStats'
 import { WorkoutCard } from '../components/WorkoutCard'
 import { Sheet } from '../components/ui'
 import { ImageCropper } from '../components/ImageCropper'
 import './Profile.css'
 
-const METRICS = ['Duración', 'Volumen', 'Repeticiones'] as const
+const METRICS = ['Duración', 'Volumen', 'Repeticiones', 'Distancia', 'Desnivel'] as const
+const FILTERS = [
+  { key: 'all', label: 'Todo' },
+  { key: 'gym', label: 'Gimnasio' },
+  { key: 'act', label: 'Carreras y rutas' },
+] as const
 const PANEL: { label: string; icon: IconName; to: string }[] = [
   { label: 'Estadísticas', icon: 'chart', to: '/estadisticas' },
   { label: 'Ejercicios', icon: 'dumbbell', to: '/ejercicios' },
@@ -26,6 +32,7 @@ export function Profile() {
   const [editing, setEditing] = useState(false)
   const [picked, setPicked] = useState<number | null>(null)
   const [limit, setLimit] = useState(20)
+  const [filter, setFilter] = useState<(typeof FILTERS)[number]['key']>('all')
   const navigate = useNavigate()
   const { profile: authProfile, session } = useAuth()
   const { workouts, userId, profiles } = useData()
@@ -34,6 +41,9 @@ export function Profile() {
   const handle = profile?.username || session?.user.email?.split('@')[0] || ''
   const avatar = profile?.avatar_url
   const mine = workouts.filter((w) => w.user_id === userId)
+  const hasActivities = mine.some(isActivity)
+  const metrics = METRICS.filter((m) => hasActivities || (m !== 'Distancia' && m !== 'Desnivel'))
+  const shown = filter === 'all' ? mine : mine.filter((w) => isActivity(w) === (filter === 'act'))
 
   // Últimas 12 semanas (lunes a domingo)
   const [monday] = useState(() => {
@@ -56,13 +66,26 @@ export function Profile() {
         ? list.reduce((a, w) => a + w.duration_s, 0)
         : metric === 'Volumen'
           ? list.reduce((a, w) => a + w.volume_kg, 0)
-          : list.reduce((a, w) => a + w.exercises.reduce((b, e) => b + e.sets.reduce((c, x) => c + (x.reps ?? 0), 0), 0), 0)
+          : metric === 'Distancia'
+            ? list.reduce((a, w) => a + (w.distance_m ?? 0), 0)
+            : metric === 'Desnivel'
+              ? list.reduce((a, w) => a + (w.elevation_gain_m ?? 0), 0)
+              : list.reduce((a, w) => a + w.exercises.reduce((b, e) => b + e.sets.reduce((c, x) => c + (x.reps ?? 0), 0), 0), 0)
     return { start, value }
   })
   const max = Math.max(1, ...weeks.map((w) => w.value))
   const shownWeek = picked ?? 11
   const weekValue = weeks[shownWeek].value
-  const headline = metric === 'Duración' ? fmtDuration(weekValue) : metric === 'Volumen' ? fmtVolume(weekValue) : `${weekValue} reps`
+  const headline =
+    metric === 'Duración'
+      ? fmtDuration(weekValue)
+      : metric === 'Volumen'
+        ? fmtVolume(weekValue)
+        : metric === 'Distancia'
+          ? fmtKmShort(weekValue)
+          : metric === 'Desnivel'
+            ? fmtMeters(weekValue)
+            : `${weekValue} reps`
   const weekLabel =
     shownWeek === 11 ? 'esta semana' : `semana del ${weeks[shownWeek].start.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}`
   return (
@@ -142,7 +165,7 @@ export function Profile() {
             <span>Esta semana</span>
           </div>
           <div className="pf-chips" role="group" aria-label="Métrica">
-            {METRICS.map((m) => (
+            {metrics.map((m) => (
               <button key={m} className="pf-chip" aria-pressed={metric === m} onClick={() => setMetric(m)}>
                 {m}
               </button>
@@ -164,12 +187,21 @@ export function Profile() {
 
         <section className="stack">
           <h2 className="section-title">Entrenamientos</h2>
-          {mine.length ? (
+          {hasActivities && (
+            <div className="pf-chips pf-filter" role="group" aria-label="Mostrar">
+              {FILTERS.map((f) => (
+                <button key={f.key} className="pf-chip" aria-pressed={filter === f.key} onClick={() => setFilter(f.key)}>
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          )}
+          {shown.length ? (
             <>
-              {mine.slice(0, limit).map((w) => (
+              {shown.slice(0, limit).map((w) => (
                 <WorkoutCard key={w.id} workout={w} />
               ))}
-              {mine.length > limit && (
+              {shown.length > limit && (
                 <button className="btn btn-block" onClick={() => setLimit(limit + 20)}>
                   Ver más entrenos
                 </button>
@@ -177,7 +209,7 @@ export function Profile() {
             </>
           ) : (
             <div className="empty">
-              <p>Cuando termines tu primer entreno aparecerá aquí.</p>
+              <p>{mine.length ? 'No hay nada de este tipo todavía.' : 'Cuando termines tu primer entreno aparecerá aquí.'}</p>
             </div>
           )}
         </section>
