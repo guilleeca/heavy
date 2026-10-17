@@ -7,6 +7,8 @@ import type { WorkoutExercise, WorkoutSet } from './workouts'
 
 /** Ejercicios de Hevy → ejercicio de la biblioteca (ExerciseDB). Clave: nombre normalizado. */
 const LIBRARY_MAP: Record<string, string> = {
+  'landmine press a un brazo (barra)': '2KGnL6M',
+  'single arm landmine press (barbell)': '2KGnL6M',
   'curl bayesian (cable)': 'bayesC1',
   'curl bayesiano (cable)': 'bayesC1',
   'bayesian curl': 'bayesC1',
