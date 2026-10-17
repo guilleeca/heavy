@@ -1,5 +1,6 @@
 import { toast } from '../lib/toast'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type CSSProperties } from 'react'
+import { joinSuperset, leaveSuperset, SUPERSET_COLORS, supersetIndex, supersetLetter } from '../lib/workouts'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { useData } from '../data/context'
 import { supabase } from '../lib/supabase'
@@ -16,7 +17,7 @@ import {
 } from '../lib/routines'
 import { Icon } from '../components/Icon'
 import { ExercisePicker } from '../components/ExercisePicker'
-import { ExerciseThumb, PageHeader, Sheet, SheetItem, Spinner} from '../components/ui'
+import { ExerciseThumb, PageHeader, Sheet, SheetItem, Spinner } from '../components/ui'
 import './RoutineEditor.css'
 
 // Claves estables para que React no mezcle inputs al reordenar o borrar
@@ -26,13 +27,17 @@ const rid = () => Math.random().toString(36).slice(2, 10)
 const withKeys = (list: RoutineExercise[]): KItem[] =>
   list.map((e) => ({ ...structuredClone(e), _k: rid(), sets: e.sets.map((s) => ({ ...s, _k: rid() })) }))
 const stripKeys = (list: KItem[]): RoutineExercise[] =>
-  list.map(({ _k: _a, sets, ...e }) => ({ ...e, sets: sets.map(({ _k: _b, ...s }) => s) }))
+  list
+    .map(({ _k: _a, sets, ...e }) => ({ ...e, sets: sets.map(({ _k: _b, ...s }) => s) }))
+    // Una superserie que se queda con un solo ejercicio deja de serlo
+    .map((e, _, all) => (e.supersetId && all.filter((x) => x.supersetId === e.supersetId).length < 2 ? { ...e, supersetId: null } : e))
 const keyedSet = (prev?: RoutineSet): KSet => ({ ...newSet(prev), _k: rid() })
 
 type Menu =
   | { kind: 'exercise'; index: number }
   | { kind: 'rest'; index: number }
   | { kind: 'set'; index: number; set: number }
+  | { kind: 'superset'; index: number }
   | { kind: 'discard' }
   | null
 
@@ -101,8 +106,7 @@ function Editor({
     [title, items, initialTitle, initialExercises],
   )
 
-  const update = (i: number, fn: (e: KItem) => KItem) =>
-    setItems((list) => list.map((e, k) => (k === i ? fn(e) : e)))
+  const update = (i: number, fn: (e: KItem) => KItem) => setItems((list) => list.map((e, k) => (k === i ? fn(e) : e)))
   const updateSet = (i: number, s: number, patch: Partial<RoutineSet>) =>
     update(i, (e) => ({ ...e, sets: e.sets.map((x, k) => (k === s ? { ...x, ...patch } : x)) }))
 
@@ -152,6 +156,8 @@ function Editor({
   }
 
   const current = menu && 'index' in menu ? items[menu.index] : undefined
+  const groups = supersetIndex(items)
+  const inGroup = (i: number) => items[i]?.supersetId != null && groups.has(items[i].supersetId!)
 
   return (
     <div className="re">
@@ -189,8 +195,15 @@ function Editor({
         {items.map((re, i) => {
           const ex = findExercise(re.exerciseId)
           const type: ExerciseType = ex?.type ?? 'weight_reps'
+          const g = re.supersetId != null ? groups.get(re.supersetId) : undefined
+          const cont = g != null && items[i + 1]?.supersetId === re.supersetId
           return (
-            <section key={re._k} className="re-ex">
+            <section
+              key={re._k}
+              className={`re-ex ${g != null ? 'ss-group' : ''} ${cont ? 'ss-cont' : ''}`}
+              style={g != null ? ({ '--ss': SUPERSET_COLORS[g % SUPERSET_COLORS.length] } as CSSProperties) : undefined}
+            >
+              {g != null && <span className="ss-label">Superserie {supersetLetter(g)}</span>}
               <div className="re-ex-head">
                 <ExerciseThumb exercise={ex} />
                 <div className="re-ex-name">
@@ -246,6 +259,16 @@ function Editor({
             <SheetItem icon={<Icon name="swap" size={20} />} onClick={() => (setPicker({ replace: menu.index }), setMenu(null))}>
               Sustituir ejercicio
             </SheetItem>
+            {items.length > 1 && (
+              <SheetItem icon={<Icon name="link" size={20} />} onClick={() => setMenu({ kind: 'superset', index: menu.index })}>
+                {inGroup(menu.index) ? 'Añadir otro a la superserie' : 'Hacer superserie con…'}
+              </SheetItem>
+            )}
+            {inGroup(menu.index) && (
+              <SheetItem icon={<Icon name="unlink" size={20} />} onClick={() => (setItems((l) => leaveSuperset(l, menu.index)), setMenu(null))}>
+                Quitar de la superserie
+              </SheetItem>
+            )}
             {menu.index > 0 && (
               <SheetItem
                 icon={<Icon name="arrowUp" size={20} />}
@@ -289,11 +312,35 @@ function Editor({
         )}
       </Sheet>
 
+      {/* Superserie */}
+      <Sheet open={menu?.kind === 'superset'} onClose={() => setMenu(null)} title="Superserie con…">
+        {menu?.kind === 'superset' && (
+          <>
+            <p className="aw-sheet-note">Al entrenar se alternan las series y el descanso empieza al terminar cada ronda.</p>
+            {items.map((e, i) =>
+              i === menu.index || (e.supersetId && e.supersetId === items[menu.index].supersetId) ? null : (
+                <SheetItem
+                  key={e._k}
+                  icon={<ExerciseThumb exercise={findExercise(e.exerciseId)} size={36} />}
+                  onClick={() => (setItems((l) => joinSuperset(l, menu.index, i, rid())), setMenu(null))}
+                >
+                  {findExercise(e.exerciseId)?.name ?? 'Ejercicio'}
+                </SheetItem>
+              ),
+            )}
+          </>
+        )}
+      </Sheet>
+
       {/* Descanso */}
       <Sheet open={menu?.kind === 'rest'} onClose={() => setMenu(null)} title="Temporizador de descanso">
         {menu?.kind === 'rest' &&
           REST_OPTIONS.map((s) => (
-            <SheetItem key={s} selected={current?.restSeconds === s} onClick={() => (update(menu.index, (x) => ({ ...x, restSeconds: s })), setMenu(null))}>
+            <SheetItem
+              key={s}
+              selected={current?.restSeconds === s}
+              onClick={() => (update(menu.index, (x) => ({ ...x, restSeconds: s })), setMenu(null))}
+            >
               {formatRest(s)}
             </SheetItem>
           ))}

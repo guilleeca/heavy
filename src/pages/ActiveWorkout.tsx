@@ -150,10 +150,10 @@ export function ActiveWorkout() {
           return (
             <section
               key={e.key}
-              className={`aw-ex ${g != null ? 'aw-ss' : ''} ${nextInGroup ? 'aw-ss-cont' : ''}`}
+              className={`aw-ex ${g != null ? 'ss-group' : ''} ${nextInGroup ? 'ss-cont' : ''}`}
               style={g != null ? ({ '--ss': SUPERSET_COLORS[g % SUPERSET_COLORS.length] } as CSSProperties) : undefined}
             >
-              {g != null && <span className="aw-ss-label">Superserie {supersetLetter(g)}</span>}
+              {g != null && <span className="ss-label">Superserie {supersetLetter(g)}</span>}
               <div className="re-ex-head">
                 <button className="aw-ex-link" onClick={() => navigate(`/ejercicio/${encodeURIComponent(e.exerciseId)}`)}>
                   <ExerciseThumb exercise={ex} />

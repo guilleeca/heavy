@@ -174,10 +174,10 @@ export function WorkoutDetail() {
                 return (
                   <article
                     key={i}
-                    className={`wd-ex ${g != null ? 'wd-ss' : ''}`}
+                    className={`wd-ex ${g != null ? 'ss-card' : ''}`}
                     style={g != null ? ({ '--ss': SUPERSET_COLORS[g % SUPERSET_COLORS.length] } as CSSProperties) : undefined}
                   >
-                    {g != null && <span className="aw-ss-label">Superserie {supersetLetter(g)}</span>}
+                    {g != null && <span className="ss-label">Superserie {supersetLetter(g)}</span>}
                     <button className="wd-ex-head" onClick={() => navigate(`/ejercicio/${encodeURIComponent(e.exerciseId)}`)}>
                       <ExerciseThumb exercise={ex} />
                       <b>{ex?.name ?? 'Ejercicio no disponible'}</b>

@@ -202,18 +202,3 @@
   font-weight: 600;
   color: var(--text-2);
 }
-
-.wd-ss {
-  border-left: 3px solid var(--ss);
-  padding-left: 12px;
-}
-
-.wd-ss .aw-ss-label {
-  align-self: flex-start;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--ss) 22%, transparent);
-  color: var(--ss);
-  font-size: 12px;
-  font-weight: 700;
-}

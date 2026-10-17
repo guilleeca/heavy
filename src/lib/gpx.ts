@@ -59,6 +59,8 @@ export function elevationGain(eles: (number | null)[]) {
 
 /* ---------- lectura ---------- */
 
+const MIN_STEP_M = 5
+
 const num = (s: string | null | undefined) => {
   if (s == null || s.trim() === '') return null
   const n = Number(s)
@@ -134,19 +136,27 @@ export function parseActivityFile(text: string): ParsedActivity {
   const pts = raw.points.filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lon) && Math.abs(p.lat) <= 90)
   if (pts.length < 2) throw new Error('El archivo no tiene un recorrido con puntos GPS.')
 
-  // Distancia acumulada y tiempo en movimiento (se descuentan las paradas)
+  // Distancia acumulada y tiempo en movimiento (se descuentan las paradas).
+  // Parado, el GPS "baila" unos metros a cada lado: si se sumara todo, en una ruta
+  // con paradas salen cientos de metros de más. Por eso solo se avanza cuando
+  // la posición se ha alejado al menos 5 m del último punto contado.
   let distance = 0
   let moving = 0
   const cum: number[] = [0]
+  let anchor = pts[0]
   for (let i = 1; i < pts.length; i++) {
-    const d = haversine(pts[i - 1].lat, pts[i - 1].lon, pts[i].lat, pts[i].lon)
-    distance += d
+    const d = haversine(anchor.lat, anchor.lon, pts[i].lat, pts[i].lon)
+    if (d >= MIN_STEP_M) {
+      distance += d
+      anchor = pts[i]
+    }
     cum.push(distance)
     const a = pts[i - 1].time
     const b = pts[i].time
     if (a != null && b != null && b > a) {
       const dt = (b - a) / 1000
-      if (dt < 300 && d / dt > 0.4) moving += dt
+      const step = haversine(pts[i - 1].lat, pts[i - 1].lon, pts[i].lat, pts[i].lon)
+      if (dt < 300 && step / dt > 0.4) moving += dt
     }
   }
   const t0 = pts.find((p) => p.time != null)?.time ?? null

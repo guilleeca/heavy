@@ -1,3 +1,5 @@
+import type { CSSProperties } from 'react'
+import { SUPERSET_COLORS, supersetIndex, supersetLetter } from '../lib/workouts'
 import { toast } from '../lib/toast'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
@@ -7,7 +9,7 @@ import { MUSCLE_LABEL } from '../lib/exercises'
 import { estimateMinutes, exerciseSummary, formatRest, setsByMuscle, totalSets } from '../lib/routines'
 import { BodyMap } from '../components/BodyMap'
 import { Icon } from '../components/Icon'
-import { ExerciseThumb, PageHeader, Spinner} from '../components/ui'
+import { ExerciseThumb, PageHeader, Spinner } from '../components/ui'
 import { RoutineMenu } from '../components/RoutineMenu'
 import { useStartWorkout } from '../workout/useStartWorkout'
 import './RoutineDetail.css'
@@ -132,10 +134,17 @@ export function RoutineDetail() {
         <section className="rd-list">
           {r.exercises.map((re, i) => {
             const ex = findExercise(re.exerciseId)
+            const g = re.supersetId ? supersetIndex(r.exercises).get(re.supersetId) : undefined
             return (
-              <Link key={i} to={`/ejercicio/${encodeURIComponent(re.exerciseId)}`} className="rd-ex">
+              <Link
+                key={i}
+                to={`/ejercicio/${encodeURIComponent(re.exerciseId)}`}
+                className={`rd-ex ${g != null ? 'ss-card rd-ss' : ''}`}
+                style={g != null ? ({ '--ss': SUPERSET_COLORS[g % SUPERSET_COLORS.length] } as CSSProperties) : undefined}
+              >
                 <ExerciseThumb exercise={ex} size={56} />
                 <div className="rd-ex-text">
+                  {g != null && <span className="ss-label">Superserie {supersetLetter(g)}</span>}
                   <b>{ex?.name ?? 'Ejercicio no disponible'}</b>
                   <span>
                     {exerciseSummary(re)}

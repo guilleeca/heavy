@@ -16,3 +16,44 @@
   height: 100%;
   background: var(--surface-2);
 }
+
+.ew-act {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.ew-act label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.ew-unit {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  color: var(--text-2);
+}
+
+.ew-unit input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 700;
+  padding: 0;
+}
+
+.ew-hint {
+  margin: -8px 0 0;
+  font-size: 13px;
+  color: var(--text-3);
+}

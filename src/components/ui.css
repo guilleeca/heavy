@@ -240,3 +240,49 @@
     transform: rotate(360deg);
   }
 }
+
+/* ---------- superseries (entreno, rutina y detalle) ---------- */
+.ss-group {
+  position: relative;
+  padding-left: 12px;
+}
+
+.ss-group::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 2px;
+  bottom: 14px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--ss);
+}
+
+/* El grupo se ve unido: la línea continúa hasta el siguiente ejercicio */
+.ss-cont {
+  border-bottom-color: transparent !important;
+}
+
+.ss-cont::before {
+  bottom: -18px;
+}
+
+.ss-label {
+  align-self: flex-start;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ss) 22%, transparent);
+  color: var(--ss);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ss-card {
+  border-left: 3px solid var(--ss);
+}
+
+.aw-sheet-note {
+  margin: 0 16px 8px;
+  font-size: 13px;
+  color: var(--text-2);
+}

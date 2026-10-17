@@ -10,3 +10,4 @@ grant usage, select on all sequences in schema public to service_role;
 -- Y para las tablas que se creen más adelante
 alter default privileges in schema public grant select, insert, update, delete on tables to service_role;
 alter default privileges in schema public grant usage, select on sequences to service_role;
+

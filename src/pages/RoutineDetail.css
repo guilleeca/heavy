@@ -166,3 +166,16 @@
 .rd-timer {
   vertical-align: -2px;
 }
+
+.rd-ss {
+  padding-left: 10px;
+}
+
+.rd-ss .ss-label {
+  margin-bottom: 2px;
+}
+
+.rd-ex-text .ss-label {
+  font-size: 12px;
+  color: var(--ss);
+}

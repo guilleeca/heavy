@@ -106,6 +106,11 @@ function Editor({ workout: w }: { workout: Workout }) {
   const activity = isActivity(w)
   const [kind, setKind] = useState<ActivityKind>((w.kind && w.kind !== 'gym' ? w.kind : 'run') as ActivityKind)
   const previews = useMemo(() => added.map((f) => URL.createObjectURL(f)), [added])
+  // Distancia y desnivel a mano (p. ej. para que cuadren con Strava)
+  const [distText, setDistText] = useState(w.distance_m != null ? (w.distance_m / 1000).toFixed(2).replace('.', ',') : '')
+  const [gainText, setGainText] = useState(w.elevation_gain_m != null ? String(Math.round(w.elevation_gain_m)) : '')
+  const distM = Math.round((parseFloat(distText.replace(',', '.')) || 0) * 1000)
+  const gainM = Math.round(parseFloat(gainText.replace(',', '.')) || 0)
 
   // Fotos ya subidas: enlaces firmados para verlas
   useEffect(() => {
@@ -146,7 +151,9 @@ function Editor({ workout: w }: { workout: Workout }) {
         started_at: new Date(when.startedAt).toISOString(),
         ended_at: new Date(when.startedAt + when.durationS * 1000).toISOString(),
         duration_s: when.durationS,
-        ...(activity ? { kind, moving_s: when.durationS === w.duration_s ? w.moving_s : null } : { volume_kg: volume, sets_count: sets, exercises }),
+        ...(activity
+          ? { kind, moving_s: when.durationS === w.duration_s ? w.moving_s : null, distance_m: distM, elevation_gain_m: gainM }
+          : { volume_kg: volume, sets_count: sets, exercises }),
         photos,
       })
       .eq('id', w.id)
@@ -205,6 +212,37 @@ function Editor({ workout: w }: { workout: Workout }) {
               </button>
             ))}
           </div>
+        )}
+        {activity && (
+          <>
+            <div className="ew-act">
+              <label>
+                <span>Distancia</span>
+                <span className="ew-unit">
+                  <input
+                    inputMode="decimal"
+                    value={distText}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => setDistText(e.target.value.replace(/[^\d.,]/g, ''))}
+                  />
+                  km
+                </span>
+              </label>
+              <label>
+                <span>Desnivel +</span>
+                <span className="ew-unit">
+                  <input
+                    inputMode="numeric"
+                    value={gainText}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => setGainText(e.target.value.replace(/[^\d]/g, ''))}
+                  />
+                  m
+                </span>
+              </label>
+            </div>
+            <p className="ew-hint">Calculados con el GPX. Si prefieres los de Strava, escríbelos aquí.</p>
+          </>
         )}
 
         {!activity && (
