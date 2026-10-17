@@ -57,7 +57,14 @@
 }
 
 .sp-emoji {
-  font-size: 22px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--accent);
 }
 
 .sp-text {

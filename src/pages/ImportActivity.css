@@ -184,3 +184,9 @@
   font-size: 13px;
   color: var(--text-2);
 }
+
+.ia-kinds button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}

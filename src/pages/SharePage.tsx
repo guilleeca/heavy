@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useData } from '../data/context'
 import { clearShared, readShared, type Shared } from '../lib/shared'
-import { stravaGpxLink, KIND_EMOJI, type Kind } from '../lib/gpx'
+import { stravaGpxLink } from '../lib/gpx'
 import { fmtWhen, isActivity } from '../lib/workouts'
-import { Icon } from '../components/Icon'
+import { Icon, KindIcon } from '../components/Icon'
 import { PageHeader, Spinner } from '../components/ui'
 import './SharePage.css'
 
@@ -65,7 +65,7 @@ export function SharePage() {
               {mine.map((w) => (
                 <button key={w.id} className="sp-item" onClick={() => navigate(`/entreno/${w.id}/editar?compartido=1`, { replace: true })}>
                   <span className="sp-emoji" aria-hidden="true">
-                    {isActivity(w) ? KIND_EMOJI[w.kind as Kind] : KIND_EMOJI.gym}
+                    <KindIcon kind={isActivity(w) ? w.kind : 'gym'} />
                   </span>
                   <span className="sp-text">
                     <b>{w.title}</b>

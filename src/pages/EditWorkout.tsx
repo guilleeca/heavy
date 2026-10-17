@@ -6,8 +6,8 @@ import { toast } from '../lib/toast'
 import { MUSCLE_LABEL, type ExerciseType } from '../lib/exercises'
 import { SET_TYPE_LABEL, type RoutineSet, type SetType } from '../lib/routines'
 import { fmtDuration, fmtVolume, isActivity, uid, workoutVolume, type Workout, type WorkoutExercise } from '../lib/workouts'
-import { KIND_EMOJI, KIND_LABEL, type ActivityKind } from '../lib/gpx'
-import { Icon } from '../components/Icon'
+import { KIND_LABEL, type ActivityKind } from '../lib/gpx'
+import { Icon, KindIcon } from '../components/Icon'
 import { ExercisePicker } from '../components/ExercisePicker'
 import { ExerciseThumb, PageHeader, Sheet, SheetItem, Spinner } from '../components/ui'
 import { WhenFields } from '../components/WhenFields'
@@ -203,7 +203,7 @@ function Editor({ workout: w }: { workout: Workout }) {
           <div className="ia-kinds" role="radiogroup" aria-label="Tipo de actividad">
             {(['run', 'hike', 'walk', 'ride'] as ActivityKind[]).map((k) => (
               <button key={k} role="radio" aria-checked={kind === k} onClick={() => setKind(k)}>
-                <span aria-hidden="true">{KIND_EMOJI[k]}</span> {KIND_LABEL[k]}
+                <KindIcon kind={k} /> {KIND_LABEL[k]}
               </button>
             ))}
           </div>

@@ -226,3 +226,11 @@
 .st-kind {
   grid-template-columns: 140px 1fr auto;
 }
+
+.st-mode button,
+.st-periods button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}

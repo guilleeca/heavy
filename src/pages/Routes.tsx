@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { useData } from '../data/context'
 import { useRoutes } from '../data/useRoutes'
-import { estimateSeconds, fmtKm, KIND_EMOJI } from '../lib/gpx'
+import { estimateSeconds, fmtKm } from '../lib/gpx'
 import { fmtDuration } from '../lib/workouts'
 import { Icon } from '../components/Icon'
 import { PageHeader, Spinner } from '../components/ui'
@@ -64,9 +64,7 @@ export function Routes() {
                 <Link key={r.id} to={`/ruta/${r.id}`} className="rt-card">
                   <StaticMap track={r.track} className="rt-map" />
                   <div className="rt-info">
-                    <b>
-                      {KIND_EMOJI[r.kind]} {r.title}
-                    </b>
+                    <b>{r.title}</b>
                     <span className="tnum">
                       {fmtKm(r.distance_m)} · +{Math.round(r.elevation_gain_m)} m ·{' '}
                       {fmtDuration(estimateSeconds(r.kind, r.distance_m, r.elevation_gain_m))}

@@ -9,7 +9,6 @@ import {
   estimateSeconds,
   fmtKm,
   fmtPace,
-  KIND_EMOJI,
   KIND_LABEL,
   paceLabel,
   parseActivityFile,
@@ -21,7 +20,7 @@ import {
 import { fmtDuration, uid } from '../lib/workouts'
 import { clearShared, readShared } from '../lib/shared'
 import { sendPush } from '../lib/push'
-import { Icon } from '../components/Icon'
+import { Icon, KindIcon } from '../components/Icon'
 import { PageHeader, Sheet, SheetItem } from '../components/ui'
 import { StaticMap } from '../components/StaticMap'
 import { WhenFields } from '../components/WhenFields'
@@ -316,7 +315,7 @@ export function ImportActivity() {
                   if (!titleTouched && when) setTitle(activityTitle(k, when.startedAt))
                 }}
               >
-                <span aria-hidden="true">{KIND_EMOJI[k]}</span> {KIND_LABEL[k]}
+                <KindIcon kind={k} /> {KIND_LABEL[k]}
               </button>
             ))}
           </div>

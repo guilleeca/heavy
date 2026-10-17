@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useData } from '../data/context'
+import { KindIcon } from '../components/Icon'
 import { BodyMap } from '../components/BodyMap'
 import { ExerciseThumb, PageHeader } from '../components/ui'
 import { MUSCLE_LABEL, type Muscle } from '../lib/exercises'
 import { inPeriod, PERIODS, setsByMuscle, summary, topExercises, type PeriodKey } from '../lib/stats'
 import { fmtDuration, fmtVolume, type Workout } from '../lib/workouts'
-import { fmtPace, KIND_EMOJI, KIND_LABEL, type ActivityKind } from '../lib/gpx'
+import { fmtPace, KIND_LABEL, type ActivityKind } from '../lib/gpx'
 import {
   activities,
   activityRecords,
@@ -69,10 +70,10 @@ export function Statistics() {
         {hasActivities && (
           <div className="st-mode" role="group" aria-label="Tipo">
             <button aria-pressed={!showAct} onClick={() => setMode('gym')}>
-              🏋️ Gimnasio
+              <KindIcon kind="gym" size={16} /> Gimnasio
             </button>
             <button aria-pressed={showAct} onClick={() => setMode('act')}>
-              🏃 Carreras y rutas
+              <KindIcon kind="run" size={16} /> Carreras y rutas
             </button>
           </div>
         )}
@@ -236,7 +237,7 @@ function ActivityStats({
             {kinds.map(([k, v]) => (
               <div key={k} className="st-muscle st-kind">
                 <span>
-                  {KIND_EMOJI[k]} {KIND_LABEL[k]} <small className="st-count">· {v.count}</small>
+                  <KindIcon kind={k} size={16} /> {KIND_LABEL[k]} <small className="st-count">· {v.count}</small>
                 </span>
                 <div className="st-bar">
                   <i style={{ width: `${(v.distance / maxKm) * 100}%` }} />
@@ -257,7 +258,7 @@ function ActivityStats({
             <div className="st-periods" role="group" aria-label="Tipo de actividad">
               {present.map((k) => (
                 <button key={k} aria-pressed={kind === k} onClick={() => setKind(k)}>
-                  {KIND_EMOJI[k]} {KIND_LABEL[k]}
+                  <KindIcon kind={k} size={16} /> {KIND_LABEL[k]}
                 </button>
               ))}
             </div>

@@ -5,11 +5,11 @@ import { MUSCLE_LABEL, type Muscle } from '../lib/exercises'
 import { setsByMuscle } from '../lib/stats'
 import { usePhotoUrls } from '../lib/photos'
 import { fmtDuration, fmtVolume, fmtWhen, isActivity, newRecords, type Workout } from '../lib/workouts'
-import { fmtKm, fmtPace, KIND_EMOJI, KIND_LABEL, paceLabel, type Kind } from '../lib/gpx'
+import { fmtKm, fmtPace, KIND_LABEL, paceLabel, type Kind } from '../lib/gpx'
 import { StaticMap } from './StaticMap'
 import { Avatar } from '../pages/RoutineDetail'
 import { BodyMap } from './BodyMap'
-import { Icon } from './Icon'
+import { Icon, KindIcon } from './Icon'
 import { ExerciseThumb } from './ui'
 import { WorkoutSocial } from './WorkoutSocial'
 import { PhotoViewer } from './PhotoViewer'
@@ -56,7 +56,11 @@ export const WorkoutCard = memo(function WorkoutCard({ workout }: { workout: Wor
           </div>
         </div>
         <h3 className="wc-title">
-          {activity && <span aria-label={KIND_LABEL[kind]}>{KIND_EMOJI[kind]} </span>}
+          {activity && (
+            <span className="wc-kind" title={KIND_LABEL[kind]}>
+              <KindIcon kind={kind} size={17} />
+            </span>
+          )}
           {workout.title}
         </h3>
         {workout.description && <p className="wc-desc">{workout.description}</p>}

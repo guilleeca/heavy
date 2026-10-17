@@ -15,8 +15,6 @@ export const KIND_LABEL: Record<Kind, string> = {
   ride: 'Bici',
 }
 
-export const KIND_EMOJI: Record<Kind, string> = { gym: '🏋️', run: '🏃', hike: '🥾', walk: '🚶', ride: '🚴' }
-
 /** Punto guardado: [lat, lon, altitud | null, segundos desde el inicio | null, pulso | null] */
 export type TrackPoint = [number, number, number | null, number | null, number | null]
 

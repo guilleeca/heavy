@@ -44,6 +44,11 @@ const PATHS = {
     'M12 20.5s-7.5-4.6-9.2-9.4C1.6 7.6 3.9 4.5 7.2 4.5c2 0 3.5 1.1 4.8 2.9 1.3-1.8 2.8-2.9 4.8-2.9 3.3 0 5.6 3.1 4.4 6.6-1.7 4.8-9.2 9.4-9.2 9.4z',
   comment: 'M21 11.5a8.5 8.5 0 0 1-12.4 7.6L3.5 20.5l1.4-4.6A8.5 8.5 0 1 1 21 11.5z',
   send: 'M21 3 10 14M21 3l-6.5 18-4.5-7-7-4.5z',
+  // Tipos de actividad (sustituyen a los emojis)
+  run: 'M3.5 15V10.5l3.2-.9 2 2.4 3.8-1.2 2.3-4.3 2.2.9-.8 3 3.6 2.1c1.1.7 1.7 1.6 1.7 2.7V16H4.5a1 1 0 0 1-1-1zM3.5 18.5h17M9.5 13.5l1-.4M12 12.8l1-.4',
+  hike: 'M2.5 20 9 8.5l3.5 6 2.5-3.5L21.5 20zM7.2 11.7 9 13l1.7-1.5',
+  walk: 'M8 3c1.7 0 3 2 3 4.5S10 12 8 12s-3-2-3-4.5S6.3 3 8 3zM5.8 15h4.4v1.8a2.2 2.2 0 0 1-4.4 0zM16 7c1.7 0 3 2 3 4.5S18 16 16 16s-3-2-3-4.5S14.3 7 16 7zM13.8 19h4.4v.3a2.2 2.2 0 0 1-4.4 0z',
+  ride: 'M2 17a3.5 3.5 0 1 0 7 0 3.5 3.5 0 1 0-7 0zM15 17a3.5 3.5 0 1 0 7 0 3.5 3.5 0 1 0-7 0zM5.5 17 9 9.5h6.5L18.5 17M9 9.5l3 7.5h-6.5M12 17l3.5-7.5M7.5 6.5H11M14.5 6.5h2.5l-1.5 3',
   live: 'M12 13.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.5 5.5a9 9 0 0 0 0 13M18.5 5.5a9 9 0 0 1 0 13',
 } as const
 
@@ -75,4 +80,10 @@ export function Icon({ name, size = 24, stroke = 1.8, className, filled }: Props
       <path d={PATHS[name]} />
     </svg>
   )
+}
+
+/** Icono del tipo de actividad (gimnasio, carrera, senderismo, caminata, bici) */
+export function KindIcon({ kind, size = 18, className }: { kind?: string | null; size?: number; className?: string }) {
+  const name: IconName = kind === 'run' || kind === 'hike' || kind === 'walk' || kind === 'ride' ? kind : 'dumbbell'
+  return <Icon name={name} size={size} className={`kind-icon ${className ?? ''}`} />
 }

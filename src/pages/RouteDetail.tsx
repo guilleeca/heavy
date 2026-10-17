@@ -2,7 +2,7 @@ import { lazy, Suspense, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { useData } from '../data/context'
 import { useRoutes } from '../data/useRoutes'
-import { estimateSeconds, fmtKm, KIND_EMOJI, KIND_LABEL, trackToGpx } from '../lib/gpx'
+import { estimateSeconds, fmtKm, KIND_LABEL, trackToGpx } from '../lib/gpx'
 import { supabase } from '../lib/supabase'
 import { toast } from '../lib/toast'
 import { fmtDuration } from '../lib/workouts'
@@ -94,9 +94,7 @@ export function RouteDetail() {
           </Suspense>
         </div>
 
-        <h1 className="rd-title">
-          {KIND_EMOJI[route.kind]} {route.title}
-        </h1>
+        <h1 className="rd-title">{route.title}</h1>
         {!mine && (
           <p className="rd-author">
             <Avatar url={author?.avatar_url} name={author?.full_name} size={24} /> Ruta de {author?.full_name ?? 'tu hermano'}

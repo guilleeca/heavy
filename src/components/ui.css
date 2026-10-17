@@ -286,3 +286,9 @@
   font-size: 13px;
   color: var(--text-2);
 }
+
+/* Icono del tipo de actividad junto a un texto */
+.kind-icon {
+  flex: none;
+  vertical-align: -3px;
+}
