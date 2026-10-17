@@ -7,6 +7,12 @@ import type { WorkoutExercise, WorkoutSet } from './workouts'
 
 /** Ejercicios de Hevy → ejercicio de la biblioteca (ExerciseDB). Clave: nombre normalizado. */
 const LIBRARY_MAP: Record<string, string> = {
+  'curl bayesian (cable)': 'bayesC1',
+  'curl bayesiano (cable)': 'bayesC1',
+  'bayesian curl': 'bayesC1',
+  'curl por detras de la espalda': 'bayesC1',
+  'curl por detras de la espalda (cable)': 'bayesC1',
+  'curl detras de la espalda (cable)': 'bayesC1',
   'press de banca (maquina smith)': 'trqKQv2',
   'dominada (asistida)': '5ipN0iE',
   'curl martillo (cable)': 'HPlPoQA',
