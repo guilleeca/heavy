@@ -112,3 +112,42 @@
   color: var(--accent);
   font-weight: 600;
 }
+
+.fw-routine {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fw-routine > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fw-routine span {
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.fw-routine-opts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+}
+
+.fw-routine-opts button {
+  min-height: 38px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.fw-routine-opts button[aria-checked='true'] {
+  background: var(--accent);
+  color: #fff;
+}

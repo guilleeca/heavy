@@ -132,22 +132,28 @@
   flex-direction: column;
 }
 
-.wd-record span:not(.wd-pr) {
+.wd-record div > span {
   font-size: 14px;
   color: var(--text-2);
 }
 
-.wd-pr {
+.wd-rec-thumb {
+  position: relative;
   flex: none;
+}
+
+.wd-pr {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
   display: grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  background: rgba(255, 176, 32, 0.18);
-  color: var(--warning);
-  font-size: 12px;
-  font-weight: 800;
+  background: #f5b524;
+  color: #3a2c08;
+  border: 2px solid var(--surface);
 }
 
 .wd-list {
@@ -191,7 +197,7 @@
 
 .wd-set {
   display: grid;
-  grid-template-columns: 52px 1fr;
+  grid-template-columns: 52px 1fr auto;
   align-items: center;
   gap: 10px;
   font-size: 15px;
@@ -201,4 +207,9 @@
   font-size: 12px;
   font-weight: 600;
   color: var(--text-2);
+}
+
+.wd-set-pr {
+  color: #f5b524;
+  display: grid;
 }

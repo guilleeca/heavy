@@ -21,7 +21,7 @@ import { usePhotoUrls } from '../lib/photos'
 import './EditWorkout.css'
 import './ImportActivity.css'
 
-type KSet = RoutineSet & { _k: string; rpe?: number | null }
+type KSet = RoutineSet & { _k: string; rpe?: number | null; prs?: string[] }
 type KItem = { _k: string; exerciseId: string; notes: string; sets: KSet[]; supersetId?: string | null }
 const rid = () => Math.random().toString(36).slice(2, 10)
 const toItems = (list: WorkoutExercise[]): KItem[] =>
@@ -38,7 +38,14 @@ const fromItems = (list: KItem[]): WorkoutExercise[] =>
       exerciseId: e.exerciseId,
       notes: e.notes.trim(),
       supersetId: e.supersetId ?? null,
-      sets: e.sets.map((s) => ({ type: s.type, weight: s.weight, reps: s.reps, duration: s.duration, ...(s.rpe ? { rpe: s.rpe } : {}) })),
+      sets: e.sets.map((s) => ({
+        type: s.type,
+        weight: s.weight,
+        reps: s.reps,
+        duration: s.duration,
+        ...(s.rpe ? { rpe: s.rpe } : {}),
+        ...(s.prs?.length ? { prs: s.prs } : {}),
+      })),
     }))
     .filter((e) => e.sets.length > 0)
     .map((e, _, all) => (e.supersetId && all.filter((x) => x.supersetId === e.supersetId).length < 2 ? { ...e, supersetId: null } : e))

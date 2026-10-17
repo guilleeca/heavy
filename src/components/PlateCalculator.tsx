@@ -15,7 +15,9 @@ const PLATES = [
   { kg: 20, color: '#2f6fdb', h: 100 },
   { kg: 15, color: '#e8b923', h: 92 },
   { kg: 10, color: '#2e9e5b', h: 84 },
+  { kg: 6, color: '#f08a24', h: 72 },
   { kg: 5, color: '#e8e8e8', h: 66 },
+  { kg: 4, color: '#8e5bd6', h: 62 },
   { kg: 2.5, color: '#d93b3b', h: 54 },
   { kg: 1.25, color: '#9aa0a6', h: 46 },
 ]
@@ -40,17 +42,32 @@ function save(key: string, value: unknown) {
   }
 }
 
-/** Discos por lado para un peso total (de mayor a menor) */
+/** Discos por lado para un peso total: la combinación exacta con menos discos
+    (si no sale exacta, la que más se acerca por debajo). Con discos de 6 y 4 kg
+    "el más grande primero" falla: 8 kg por lado son 4 + 4, no 6 + 1,25… */
 function platesFor(total: number, bar: number, available: number[]) {
-  let side = Math.max(0, (total - bar) / 2)
-  const out: number[] = []
-  for (const p of available) {
-    while (side + 1e-9 >= p) {
-      out.push(p)
-      side -= p
+  const unit = 0.25
+  const side = Math.max(0, Math.round((total - bar) / 2 / unit))
+  const coins = available.map((p) => Math.round(p / unit))
+  // best[x] = menos discos para sumar exactamente x (en cuartos de kilo)
+  const best = new Array<number>(side + 1).fill(Infinity)
+  const pick = new Array<number>(side + 1).fill(-1)
+  best[0] = 0
+  for (let x = 1; x <= side; x++) {
+    for (let i = 0; i < coins.length; i++) {
+      const c = coins[i]
+      if (c <= x && best[x - c] + 1 < best[x]) {
+        best[x] = best[x - c] + 1
+        pick[x] = i
+      }
     }
   }
-  return { plates: out, left: Math.round(side * 2 * 100) / 100 }
+  let x = side
+  while (x > 0 && best[x] === Infinity) x--
+  const out: number[] = []
+  for (let y = x; y > 0; y -= coins[pick[y]]) out.push(available[pick[y]])
+  out.sort((p, q) => q - p)
+  return { plates: out, left: Math.round((side - x) * unit * 2 * 100) / 100 }
 }
 
 /** Calculadora de discos: qué poner en cada lado de la barra */

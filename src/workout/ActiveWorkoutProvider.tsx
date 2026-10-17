@@ -8,6 +8,7 @@ import {
   joinSuperset,
   leaveSuperset,
   previousSets,
+  setPrs,
   uid,
   workoutVolume,
   type ActiveWorkout,
@@ -239,21 +240,28 @@ export function ActiveWorkoutProvider({ children }: { children: ReactNode }) {
       const done = !s.done
       // Si la serie se marca sin escribir nada, se rellenan con lo de la vez anterior / la rutina
       const eff = done ? effective(s, previousSets(workouts, userId, e.exerciseId)[si]) : null
+      const filled = { weight: s.weight ?? eff?.weight ?? null, reps: s.reps ?? eff?.reps ?? null, duration: s.duration ?? eff?.duration ?? null }
+      // Récords en directo: frente a todo el historial y a lo ya hecho hoy en ese ejercicio
+      let prs: string[] | undefined
+      if (done) {
+        const history = workouts
+          .filter((w) => w.user_id === userId && w.id !== a.id)
+          .flatMap((w) => w.exercises.filter((x) => x.exerciseId === e.exerciseId).flatMap((x) => x.sets))
+        const today = a.exercises
+          .filter((x) => x.exerciseId === e.exerciseId)
+          .flatMap((x) => x.sets.filter((y, k) => y.done && !(a.exercises.indexOf(x) === ei && k === si)))
+        const found = setPrs({ ...filled, type: s.type }, findExercise(e.exerciseId)?.type ?? 'weight_reps', history, today)
+        if (found.length) {
+          prs = found.map((r) => r.label)
+          const name = findExercise(e.exerciseId)?.name ?? 'Ejercicio'
+          setTimeout(() => window.dispatchEvent(new CustomEvent('heavy-pr', { detail: { name, exerciseId: e.exerciseId, records: found } })), 0)
+        }
+      }
       const exercises = a.exercises.map((x, i) =>
         i === ei
           ? {
               ...x,
-              sets: x.sets.map((y, k) =>
-                k === si
-                  ? {
-                      ...y,
-                      done,
-                      weight: y.weight ?? eff?.weight ?? null,
-                      reps: y.reps ?? eff?.reps ?? null,
-                      duration: y.duration ?? eff?.duration ?? null,
-                    }
-                  : y,
-              ),
+              sets: x.sets.map((y, k) => (k === si ? { ...y, done, ...filled, prs: done ? prs : undefined } : y)),
             }
           : x,
       )
@@ -273,8 +281,10 @@ export function ActiveWorkoutProvider({ children }: { children: ReactNode }) {
               : a.rest
       return { ...a, exercises, rest }
     },
-    [workouts, userId],
+    [workouts, userId, findExercise],
   )
+
+  const prevOf = useCallback((exerciseId: string) => previousSets(workouts, userId, exerciseId), [workouts, userId])
 
   // Notificación fija durante todo el entreno (como Hevy): así ya está puesta
   // cuando sales de la app, sin depender de que el móvil avise a tiempo.
@@ -289,19 +299,19 @@ export function ActiveWorkoutProvider({ children }: { children: ReactNode }) {
     }
     // Fuera de la app (p. ej. tras pulsar −15/+15) se actualiza al instante
     const delay = restDone || document.visibilityState === 'hidden' ? 0 : 400
-    notifyTimer.current = window.setTimeout(() => void showWorkoutNotification(active, findExercise, restDone), delay)
+    notifyTimer.current = window.setTimeout(() => void showWorkoutNotification(active, findExercise, restDone, prevOf), delay)
     // Durante el descanso, la cuenta atrás de la notificación baja segundo a segundo
     const tick =
       active.rest && !isNative
         ? window.setInterval(() => {
-            if (active.rest && active.rest.endsAt > Date.now()) void showWorkoutNotification(active, findExercise)
+            if (active.rest && active.rest.endsAt > Date.now()) void showWorkoutNotification(active, findExercise, false, prevOf)
           }, 1000)
         : undefined
     return () => {
       window.clearTimeout(notifyTimer.current)
       window.clearInterval(tick)
     }
-  }, [active, findExercise])
+  }, [active, findExercise, prevOf])
 
   // Botones de la notificación (llegan desde el service worker)
   useEffect(() => {
@@ -394,7 +404,7 @@ export function ActiveWorkoutProvider({ children }: { children: ReactNode }) {
               sets: e.sets
                 .map((s, i) => ({ s, eff: effective(s, prev[i]) }))
                 .filter(({ s }) => s.done)
-                .map(({ s, eff }) => ({ type: s.type, ...eff, ...(s.rpe ? { rpe: s.rpe } : {}) })),
+                .map(({ s, eff }) => ({ type: s.type, ...eff, ...(s.rpe ? { rpe: s.rpe } : {}), ...(s.prs?.length ? { prs: s.prs } : {}) })),
             }
           })
           .filter((e) => e.sets.length > 0)

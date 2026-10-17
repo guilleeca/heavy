@@ -7,6 +7,8 @@ import { useNow } from '../workout/useNow'
 import { Icon } from '../components/Icon'
 import { PageHeader, Sheet, SheetItem } from '../components/ui'
 import { toast } from '../lib/toast'
+import { supabase } from '../lib/supabase'
+import { routineChanges, routineFromWorkout } from '../lib/routines'
 import { WhenFields } from '../components/WhenFields'
 import { useCropQueue } from '../components/useCropQueue'
 import './FinishWorkout.css'
@@ -18,7 +20,7 @@ import '../components/CustomExerciseForm.css'
 export function FinishWorkout() {
   const navigate = useNavigate()
   const w = useActiveWorkout()
-  const { findExercise, workouts, userId } = useData()
+  const { findExercise, workouts, userId, routines } = useData()
   const now = useNow(1000)
   const a = w.active
   const [title, setTitle] = useState(a?.title ?? '')
@@ -31,6 +33,8 @@ export function FinishWorkout() {
   // Hora y duración corregidas a mano (null = las reales)
   const [when, setWhen] = useState<{ startedAt: number; durationS: number } | null>(null)
   const previews = useMemo(() => photos.map((f) => URL.createObjectURL(f)), [photos])
+  // ¿Actualizar la rutina con lo que se ha hecho? (solo si ha cambiado)
+  const [updateRoutine, setUpdateRoutine] = useState(false)
 
   if (!a) {
     return (
@@ -48,9 +52,19 @@ export function FinishWorkout() {
   const sets = done.reduce((n, e) => n + e.sets.length, 0)
   const volume = workoutVolume(done, findExercise)
 
+  const routine = a.routineId ? routines.find((r) => r.id === a.routineId && r.user_id === userId) : undefined
+  const changes = routine ? routineChanges(routine, a.exercises) : []
+
   async function save() {
     if (!sets) return
     setSaving(true)
+    if (routine && changes.length && updateRoutine) {
+      const { error } = await supabase
+        .from('routines')
+        .update({ exercises: routineFromWorkout(routine, a!.exercises) })
+        .eq('id', routine.id)
+      if (error) toast('No se pudo actualizar la rutina; el entreno sí se guarda')
+    }
     const id = await w.finish({ title, description, visibility, photos, ...(when ?? {}) })
     setSaving(false)
     if (!id) return toast('No se pudo guardar el entreno. Revisa la conexión e inténtalo de nuevo.')
@@ -97,10 +111,30 @@ export function FinishWorkout() {
           <p className="fw-when">
             Empezado el {new Date(a.startedAt).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })} a las{' '}
             {new Date(a.startedAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} ·{' '}
-            <button className="fw-edit-when" onClick={() => setWhen({ startedAt: a.startedAt, durationS: Math.round((now - a.startedAt) / 60000) * 60 })}>
+            <button
+              className="fw-edit-when"
+              onClick={() => setWhen({ startedAt: a.startedAt, durationS: Math.round((now - a.startedAt) / 60000) * 60 })}
+            >
               Editar hora y duración
             </button>
           </p>
+        )}
+
+        {routine && changes.length > 0 && sets > 0 && (
+          <section className="card fw-routine">
+            <div>
+              <b>Has cambiado la rutina «{routine.title}»</b>
+              <span>{changes.join(' · ')}</span>
+            </div>
+            <div className="fw-routine-opts" role="radiogroup" aria-label="Rutina">
+              <button role="radio" aria-checked={!updateRoutine} onClick={() => setUpdateRoutine(false)}>
+                Dejarla como estaba
+              </button>
+              <button role="radio" aria-checked={updateRoutine} onClick={() => setUpdateRoutine(true)}>
+                Actualizar rutina
+              </button>
+            </div>
+          </section>
         )}
 
         {!sets && <p className="fw-warn">Marca con ✓ al menos una serie para poder guardar el entreno.</p>}

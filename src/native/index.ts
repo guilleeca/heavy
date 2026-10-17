@@ -57,8 +57,7 @@ export function initNative() {
 
   // Canales de notificación (Android los usa para el sonido y la importancia)
   void (async () => {
-    await LocalNotifications.createChannel({ id: 'workout', name: 'Entreno en curso', importance: 2, vibration: false, visibility: 1 })
-    await LocalNotifications.createChannel({ id: 'rest', name: 'Fin del descanso', importance: 5, vibration: true, visibility: 1 })
+    await LocalNotifications.createChannel({ id: 'rest', name: 'Avisos', importance: 5, vibration: true, visibility: 1 })
     await LocalNotifications.createChannel({
       id: 'social',
       name: 'Tu hermano',
@@ -66,28 +65,18 @@ export function initNative() {
       importance: 4,
       visibility: 1,
     })
-    await LocalNotifications.registerActionTypes({
-      types: [
-        {
-          id: 'rest',
-          actions: [
-            { id: 'rest-minus', title: '−15 s' },
-            { id: 'rest-plus', title: '+15 s' },
-          ],
-        },
-        { id: 'complete', actions: [{ id: 'complete', title: '✓ Completar serie' }] },
-      ],
-    })
   })().catch(() => {})
 
-  // Botones y toques de las notificaciones locales
-  void LocalNotifications.addListener('localNotificationActionPerformed', ({ actionId, notification }) => {
+  // Toques en avisos locales (avisos del hermano con la app abierta, salirse de la ruta)
+  void LocalNotifications.addListener('localNotificationActionPerformed', ({ notification }) => {
     const url = (notification.extra as { url?: string } | undefined)?.url
-    if (actionId === 'tap') {
-      if (url) go(url)
-      return
-    }
-    window.dispatchEvent(new CustomEvent('heavy-action', { detail: actionId }))
+    if (url) go(url)
+  })
+
+  // Botones de la notificación del entreno (−15 s, +15 s, completar serie)
+  void HeavyWorkout.addListener('action', ({ action }) => {
+    if (action === 'rest-done') return
+    window.dispatchEvent(new CustomEvent('heavy-action', { detail: action }))
   })
 
   // Notificaciones push (Firebase): al tocarlas se abre la pantalla que toca
@@ -174,63 +163,39 @@ export async function nativeNotificationPermission() {
   }
 }
 
-export const WORKOUT_ID = 1
-export const REST_ID = 2
-const ALERT_ID = 3
-
-/** Notificación fija del entreno en curso */
-export async function nativeWorkoutNotification(title: string, body: string, resting: boolean, hasNext: boolean) {
-  await LocalNotifications.schedule({
-    notifications: [
-      {
-        id: WORKOUT_ID,
-        title,
-        body,
-        channelId: 'workout',
-        ongoing: true,
-        autoCancel: false,
-        smallIcon: 'ic_stat_heavy',
-        actionTypeId: resting ? 'rest' : hasNext ? 'complete' : undefined,
-        extra: { url: '#/entreno' },
-      },
-    ],
-  })
+/* Notificación del entreno en curso: plugin propio (android/…/WorkoutNotifier.java).
+   Cuenta atrás en segundos, ±15 s sin abrir la app, y al acabar el descanso un pitido
+   que baja la música un momento, vibración y un aviso que se quita solo a los 10 s. */
+type WorkoutPluginApi = {
+  show(o: { title: string; body: string; restEndsAt: number; hasNext: boolean }): Promise<void>
+  close(): Promise<void>
+  beep(): Promise<void>
+  addListener(ev: 'action', cb: (d: { action: string }) => void): Promise<{ remove: () => Promise<void> }>
 }
+const HeavyWorkout = registerPlugin<WorkoutPluginApi>('HeavyWorkout')
 
-/** Programa (o mueve) el aviso de fin de descanso a su hora exacta; null lo cancela */
-let restAt: number | null = null
-export async function nativeRestAlarm(endsAt: number | null, body: string) {
-  if (endsAt === restAt) return
-  const prev = restAt
-  restAt = endsAt
-  // Si el descanso anterior ya terminó, su aviso está a la vista: no se quita
-  if (prev != null && prev > Date.now() + 500) await LocalNotifications.cancel({ notifications: [{ id: REST_ID }] }).catch(() => {})
-  if (endsAt == null || endsAt <= Date.now()) return
-  await LocalNotifications.schedule({
-    notifications: [
-      {
-        id: REST_ID,
-        title: '¡Descanso terminado!',
-        body,
-        channelId: 'rest',
-        smallIcon: 'ic_stat_heavy',
-        actionTypeId: 'complete',
-        schedule: { at: new Date(endsAt), allowWhileIdle: true },
-        extra: { url: '#/entreno' },
-      },
-    ],
-  })
+let lastShown = ''
+export async function nativeWorkoutNotification(title: string, body: string, restEndsAt: number | null, hasNext: boolean) {
+  const key = `${title}|${body}|${restEndsAt ?? 0}|${hasNext}`
+  if (key === lastShown) return
+  lastShown = key
+  await HeavyWorkout.show({ title, body, restEndsAt: restEndsAt ?? 0, hasNext })
 }
 
 export async function nativeCloseWorkout() {
-  restAt = null
-  await LocalNotifications.cancel({ notifications: [{ id: WORKOUT_ID }, { id: REST_ID }] }).catch(() => {})
+  lastShown = ''
+  await HeavyWorkout.close().catch(() => {})
+}
+
+/** Pitido de fin de descanso (baja la música mientras suena) */
+export function nativeBeep() {
+  void HeavyWorkout.beep().catch(() => {})
 }
 
 /** Aviso inmediato con sonido y vibración (p. ej. "te has salido de la ruta") */
 export async function nativeAlert(title: string, body: string) {
   await LocalNotifications.schedule({
-    notifications: [{ id: ALERT_ID, title, body, channelId: 'rest', smallIcon: 'ic_stat_heavy' }],
+    notifications: [{ id: 3, title, body, channelId: 'rest', smallIcon: 'ic_stat_heavy' }],
   }).catch(() => {})
 }
 

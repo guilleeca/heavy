@@ -61,7 +61,12 @@
 
 .re-notes {
   width: 100%;
-  resize: vertical;
+  /* Crece solo con el texto (sin tirador): una línea si está vacía, como mucho ~5 */
+  resize: none;
+  min-height: 1.6em;
+  max-height: 8em;
+  overflow-y: auto;
+  line-height: 1.4;
   border: 0;
   background: transparent;
   color: var(--text);

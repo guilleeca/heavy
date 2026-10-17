@@ -15,6 +15,8 @@ export function unlockAudio() {
 }
 
 export function restDoneAlert() {
+  // En la app de Android lo hace la alarma nativa (pitido que baja la música)
+  if (isNative) return
   try {
     navigator.vibrate?.([250, 120, 250])
   } catch {

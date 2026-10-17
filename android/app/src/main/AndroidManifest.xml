@@ -55,6 +55,9 @@
 
         </activity>
 
+        <!-- Botones de la notificación del entreno y alarma de fin de descanso -->
+        <receiver android:name=".WorkoutActionReceiver" android:exported="false" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

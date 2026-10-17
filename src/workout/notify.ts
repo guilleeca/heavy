@@ -2,8 +2,8 @@
    descanso con −15 s / +15 s / Saltar, y "Completar serie" cuando no hay descanso. */
 
 import type { Exercise } from '../lib/exercises'
-import { fmtClock, fmtKg, type ActiveWorkout } from '../lib/workouts'
-import { isNative, nativeCloseWorkout, nativeNotificationPermission, nativeRestAlarm, nativeWorkoutNotification } from '../native'
+import { effective, fmtClock, fmtKg, type ActiveWorkout, type WorkoutSet } from '../lib/workouts'
+import { isNative, nativeCloseWorkout, nativeNotificationPermission, nativeWorkoutNotification } from '../native'
 
 const TAG = 'heavy-workout'
 
@@ -55,35 +55,37 @@ export function nextPending(a: ActiveWorkout): [number, number] | null {
   return null
 }
 
-/** Texto "Siguiente: …" de la notificación */
-function nextLineOf(a: ActiveWorkout, find: (id: string) => Exercise | undefined) {
+/** Series de la última vez que se hizo cada ejercicio */
+export type PrevOf = (exerciseId: string) => WorkoutSet[]
+
+/** Texto "Siguiente: …": lo escrito en la serie, si no lo de la vez anterior y si no lo de la rutina */
+function nextLineOf(a: ActiveWorkout, find: (id: string) => Exercise | undefined, prevOf?: PrevOf) {
   const next = nextPending(a)
-  const nextEx = next ? a.exercises[next[0]] : null
-  const nextSet = next && nextEx ? nextEx.sets[next[1]] : null
-  return nextEx && nextSet
-    ? `Siguiente: ${find(nextEx.exerciseId)?.name ?? 'Ejercicio'} · serie ${next![1] + 1}` +
-        (nextSet.target?.weight != null || nextSet.target?.reps != null
-          ? ` · ${nextSet.target?.weight != null ? `${fmtKg(nextSet.target.weight)} kg × ` : ''}${nextSet.target?.reps ?? '-'}`
-          : '')
-    : 'Todas las series completadas'
+  if (!next) return 'Todas las series completadas'
+  const ex = a.exercises[next[0]]
+  const set = ex.sets[next[1]]
+  const info = find(ex.exerciseId)
+  const v = effective(set, prevOf?.(ex.exerciseId)[next[1]])
+  const type = info?.type ?? 'weight_reps'
+  const values =
+    type === 'duration'
+      ? v.duration != null
+        ? ` · ${fmtClock(v.duration)}`
+        : ''
+      : v.reps != null || v.weight != null
+        ? ` · ${v.weight != null && type !== 'reps' ? `${type === 'assisted' ? '-' : ''}${fmtKg(v.weight)} kg × ` : ''}${v.reps ?? '-'}`
+        : ''
+  return `Siguiente: ${info?.name ?? 'Ejercicio'} · serie ${next[1] + 1}${values}`
 }
 
-/* App de Android: notificación nativa fija y aviso de descanso programado a su hora exacta */
-let lastNative = ''
-async function showNative(a: ActiveWorkout, find: (id: string) => Exercise | undefined) {
+/* App de Android: notificación nativa (cuenta atrás y aviso de descanso los gestiona Android) */
+async function showNative(a: ActiveWorkout, find: (id: string) => Exercise | undefined, prevOf?: PrevOf) {
   const resting = !!a.rest && a.rest.endsAt > Date.now()
-  const nextLine = nextLineOf(a, find)
-  const until = resting ? new Date(a.rest!.endsAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ''
-  const title = resting ? `Descanso hasta las ${until}` : a.title
-  const key = `${title}|${nextLine}|${resting}`
-  await nativeRestAlarm(resting ? a.rest!.endsAt : null, nextLine)
-  if (key === lastNative) return
-  lastNative = key
-  await nativeWorkoutNotification(title, nextLine, resting, !!nextPending(a))
+  await nativeWorkoutNotification(a.title, nextLineOf(a, find, prevOf), resting ? a.rest!.endsAt : null, !!nextPending(a))
 }
 
-export async function showWorkoutNotification(a: ActiveWorkout, find: (id: string) => Exercise | undefined, restDone = false) {
-  if (isNative) return showNative(a, find).catch(() => {})
+export async function showWorkoutNotification(a: ActiveWorkout, find: (id: string) => Exercise | undefined, restDone = false, prevOf?: PrevOf) {
+  if (isNative) return showNative(a, find, prevOf).catch(() => {})
   const reg = await registration()
   if (!reg) return
   // Si el aviso del servidor ya avisó del fin del descanso, no se vuelve a sonar
@@ -92,7 +94,7 @@ export async function showWorkoutNotification(a: ActiveWorkout, find: (id: strin
     if (shown.some((n) => n.title === '¡Descanso terminado!')) restDone = false
   }
   const next = nextPending(a)
-  const nextLine = nextLineOf(a, find)
+  const nextLine = nextLineOf(a, find, prevOf)
 
   const resting = a.rest && a.rest.endsAt > Date.now()
   // Cuenta atrás: se vuelve a pintar cada segundo mientras dura el descanso
@@ -127,7 +129,6 @@ export async function showWorkoutNotification(a: ActiveWorkout, find: (id: strin
 
 export async function closeWorkoutNotification() {
   if (isNative) {
-    lastNative = ''
     return nativeCloseWorkout()
   }
   const reg = await registration()

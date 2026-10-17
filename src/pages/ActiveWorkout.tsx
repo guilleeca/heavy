@@ -208,6 +208,7 @@ export function ActiveWorkout() {
       </div>
 
       <RestBar />
+      <PrToast />
 
       <Sheet open={menu?.kind === 'exercise'} onClose={() => setMenu(null)} title={current ? findExercise(current.exerciseId)?.name : ''}>
         {menu?.kind === 'exercise' && (
@@ -385,6 +386,7 @@ function SetsTable({
             <button className="re-set-n aw-set-n" onClick={() => onType(si)} aria-label={`Serie ${si + 1}: tipo y RPE`}>
               <SetBadge type={s.type} n={n} />
               {s.rpe ? <small className="aw-rpe tnum">{fmtRpe(s.rpe)}</small> : null}
+              {s.done && s.prs?.length ? <Icon name="medal" size={15} stroke={2} className="aw-medal" /> : null}
             </button>
             <span className="aw-prev tnum">{prevLabel(p)}</span>
             {showWeight && (
@@ -512,5 +514,45 @@ function NotifyBanner() {
         Activar
       </button>
     </div>
+  )
+}
+
+type PrEvent = { name: string; exerciseId: string; records: { label: string; value: string }[] }
+
+/** Aviso arriba al batir un récord en directo (como Hevy) */
+function PrToast() {
+  const { findExercise } = useData()
+  const [pr, setPr] = useState<PrEvent | null>(null)
+  useEffect(() => {
+    let t: number | undefined
+    const on = (e: Event) => {
+      setPr((e as CustomEvent<PrEvent>).detail)
+      try {
+        navigator.vibrate?.([40, 60, 40])
+      } catch {
+        /* sin vibración */
+      }
+      window.clearTimeout(t)
+      t = window.setTimeout(() => setPr(null), 4000)
+    }
+    window.addEventListener('heavy-pr', on)
+    return () => {
+      window.removeEventListener('heavy-pr', on)
+      window.clearTimeout(t)
+    }
+  }, [])
+  if (!pr) return null
+  return (
+    <button className="pr-toast" onClick={() => setPr(null)} role="status">
+      <span className="pr-medal">
+        <Icon name="medal" size={22} stroke={2} />
+      </span>
+      <ExerciseThumb exercise={findExercise(pr.exerciseId)} size={40} />
+      <span className="pr-text">
+        <b>¡Nuevo récord!</b>
+        <small>{pr.name}</small>
+        <small className="pr-vals">{pr.records.map((r) => `${r.label}: ${r.value}`).join(' · ')}</small>
+      </span>
+    </button>
   )
 }

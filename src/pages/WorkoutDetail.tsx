@@ -140,7 +140,12 @@ export function WorkoutDetail() {
                 <h2 className="section-title">Récords nuevos</h2>
                 {records.map((r, i) => (
                   <div key={i} className="wd-record">
-                    <span className="wd-pr">PR</span>
+                    <span className="wd-rec-thumb">
+                      <ExerciseThumb exercise={findExercise(r.exerciseId)} size={44} />
+                      <span className="wd-pr">
+                        <Icon name="medal" size={14} stroke={2.2} />
+                      </span>
+                    </span>
                     <div>
                       <b>{findExercise(r.exerciseId)?.name ?? 'Ejercicio'}</b>
                       <span>
@@ -181,6 +186,11 @@ export function WorkoutDetail() {
                           <div key={k} className="wd-set">
                             <SetBadge type={s.type} n={n} />
                             <span className="tnum">{fmtSet(s, ex?.type ?? 'weight_reps')}</span>
+                            {s.prs?.length ? (
+                              <span className="wd-set-pr" title={s.prs.join(', ')}>
+                                <Icon name="medal" size={15} stroke={2} />
+                              </span>
+                            ) : null}
                           </div>
                         )
                       })}

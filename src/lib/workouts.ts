@@ -11,6 +11,8 @@ export type WorkoutSet = {
   duration: number | null
   /** Esfuerzo percibido (6–10) */
   rpe?: number | null
+  /** Récords batidos en esta serie */
+  prs?: string[]
 }
 
 export type WorkoutExercise = {
@@ -55,6 +57,8 @@ export type LiveSet = {
   duration: number | null
   done: boolean
   rpe?: number | null
+  /** Récords batidos al marcarla (medalla) */
+  prs?: string[]
   /** Objetivo de la rutina (se muestra en gris si no hay anterior) */
   target?: Pick<RoutineSet, 'weight' | 'reps' | 'repsMax' | 'duration'>
 }
@@ -155,6 +159,38 @@ export function newRecords(done: Workout, history: Workout[], find: (id: string)
       const best = Math.max(...work.map((s) => s.reps ?? 0))
       if (best > Math.max(...old.map((s) => s.reps ?? 0))) out.push({ exerciseId: e.exerciseId, label: 'Más repeticiones', value: `${best} reps` })
     }
+  }
+  return out
+}
+
+/** Récords que bate una serie al marcarla (frente al historial y a las series ya hechas hoy) */
+export function setPrs(
+  set: Pick<WorkoutSet, 'weight' | 'reps' | 'duration' | 'type'>,
+  type: ExerciseType,
+  history: WorkoutSet[],
+  today: WorkoutSet[],
+): Record[] {
+  if (set.type === 'warmup') return []
+  const old = history.filter((s) => s.type !== 'warmup')
+  // Sin historial no hay récord (como Hevy: la primera vez no cuenta)
+  if (!old.length) return []
+  const base = [...old, ...today.filter((s) => s.type !== 'warmup')]
+  const out: Record[] = []
+  const w = set.weight ?? 0
+  const r = set.reps ?? 0
+  if (type === 'weight_reps') {
+    if (w <= 0 || r <= 0) return []
+    if (w > Math.max(...base.map((s) => s.weight ?? 0))) out.push({ exerciseId: '', label: 'Peso máximo', value: `${fmtKg(w)} kg` })
+    const orm = oneRepMax(w, r)
+    if (orm > Math.max(...base.map((s) => oneRepMax(s.weight ?? 0, s.reps ?? 0))) + 0.01)
+      out.push({ exerciseId: '', label: '1RM estimado', value: `${fmtKg(orm)} kg` })
+    if (w * r > Math.max(...base.map((s) => (s.weight ?? 0) * (s.reps ?? 0))))
+      out.push({ exerciseId: '', label: 'Mejor serie', value: `${fmtKg(w)} kg × ${r}` })
+  } else if (type === 'duration') {
+    const d = set.duration ?? 0
+    if (d > 0 && d > Math.max(...base.map((s) => s.duration ?? 0))) out.push({ exerciseId: '', label: 'Mayor duración', value: fmtClock(d) })
+  } else if (r > 0 && r > Math.max(...base.map((s) => s.reps ?? 0))) {
+    out.push({ exerciseId: '', label: 'Más repeticiones', value: `${r} reps` })
   }
   return out
 }
