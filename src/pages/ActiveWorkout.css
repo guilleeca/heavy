@@ -249,3 +249,102 @@
   flex: none;
   min-height: 36px;
 }
+
+/* ---------- superseries ---------- */
+.aw-ss {
+  position: relative;
+  padding-left: 12px;
+}
+
+.aw-ss::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 2px;
+  bottom: 14px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--ss);
+}
+
+/* El grupo se ve unido: la línea continúa hasta el siguiente ejercicio */
+.aw-ss-cont {
+  border-bottom-color: transparent;
+}
+
+.aw-ss-cont::before {
+  bottom: -18px;
+}
+
+.aw-ss-label {
+  align-self: flex-start;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ss) 22%, transparent);
+  color: var(--ss);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.aw-sheet-note {
+  margin: 0 16px 8px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+/* ---------- RPE ---------- */
+.aw-set-n {
+  position: relative;
+}
+
+.aw-rpe {
+  position: absolute;
+  right: -4px;
+  top: -2px;
+  min-width: 18px;
+  padding: 0 3px;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 15px;
+}
+
+.aw-rpe-pick {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 16px 12px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 4px;
+}
+
+.aw-rpe-pick > span {
+  font-weight: 600;
+}
+
+.aw-rpe-pick small {
+  font-weight: 400;
+  color: var(--text-2);
+  font-size: 13px;
+}
+
+.aw-rpe-pick div {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 4px;
+}
+
+.aw-rpe-pick button {
+  height: 36px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.aw-rpe-pick button[aria-pressed='true'] {
+  background: var(--accent);
+  color: #fff;
+}

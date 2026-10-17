@@ -3,7 +3,8 @@ import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { useData } from '../data/context'
 import { supabase } from '../lib/supabase'
 import { toast } from '../lib/toast'
-import { fmtDuration, fmtSet, fmtVolume, fmtWhen, isActivity, newRecords } from '../lib/workouts'
+import { fmtDuration, fmtSet, fmtVolume, fmtWhen, isActivity, newRecords, SUPERSET_COLORS, supersetIndex, supersetLetter } from '../lib/workouts'
+import type { CSSProperties } from 'react'
 import { KIND_LABEL } from '../lib/gpx'
 import { ActivityBody } from '../components/ActivityView'
 import { Icon } from '../components/Icon'
@@ -169,8 +170,14 @@ export function WorkoutDetail() {
               {w.exercises.map((e, i) => {
                 const ex = findExercise(e.exerciseId)
                 let n = 0
+                const g = e.supersetId ? supersetIndex(w.exercises).get(e.supersetId) : undefined
                 return (
-                  <article key={i} className="wd-ex">
+                  <article
+                    key={i}
+                    className={`wd-ex ${g != null ? 'wd-ss' : ''}`}
+                    style={g != null ? ({ '--ss': SUPERSET_COLORS[g % SUPERSET_COLORS.length] } as CSSProperties) : undefined}
+                  >
+                    {g != null && <span className="aw-ss-label">Superserie {supersetLetter(g)}</span>}
                     <button className="wd-ex-head" onClick={() => navigate(`/ejercicio/${encodeURIComponent(e.exerciseId)}`)}>
                       <ExerciseThumb exercise={ex} />
                       <b>{ex?.name ?? 'Ejercicio no disponible'}</b>

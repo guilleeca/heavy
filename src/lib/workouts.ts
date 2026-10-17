@@ -9,12 +9,16 @@ export type WorkoutSet = {
   weight: number | null
   reps: number | null
   duration: number | null
+  /** Esfuerzo percibido (6–10) */
+  rpe?: number | null
 }
 
 export type WorkoutExercise = {
   exerciseId: string
   notes: string
   sets: WorkoutSet[]
+  /** Ejercicios con el mismo id forman una superserie */
+  supersetId?: string | null
 }
 
 export type Workout = {
@@ -50,6 +54,7 @@ export type LiveSet = {
   reps: number | null
   duration: number | null
   done: boolean
+  rpe?: number | null
   /** Objetivo de la rutina (se muestra en gris si no hay anterior) */
   target?: Pick<RoutineSet, 'weight' | 'reps' | 'repsMax' | 'duration'>
 }
@@ -60,6 +65,7 @@ export type LiveExercise = {
   notes: string
   restSeconds: number
   sets: LiveSet[]
+  supersetId?: string | null
 }
 
 export type ActiveWorkout = {
@@ -121,18 +127,16 @@ export function previousSets(workouts: Workout[], userId: string, exerciseId: st
 export type Record = { exerciseId: string; label: string; value: string }
 
 /** Récords nuevos de un entreno frente a todo el historial anterior */
-export function newRecords(
-  done: Workout,
-  history: Workout[],
-  find: (id: string) => Exercise | undefined,
-): Record[] {
+export function newRecords(done: Workout, history: Workout[], find: (id: string) => Exercise | undefined): Record[] {
   const out: Record[] = []
   const before = history.filter((w) => w.user_id === done.user_id && w.id !== done.id && w.started_at < done.started_at)
   for (const e of done.exercises) {
     const ex = find(e.exerciseId)
     const type = ex?.type ?? 'weight_reps'
     const work = e.sets.filter((s) => s.type !== 'warmup')
-    const old = before.flatMap((w) => w.exercises.filter((x) => x.exerciseId === e.exerciseId).flatMap((x) => x.sets)).filter((s) => s.type !== 'warmup')
+    const old = before
+      .flatMap((w) => w.exercises.filter((x) => x.exerciseId === e.exerciseId).flatMap((x) => x.sets))
+      .filter((s) => s.type !== 'warmup')
     if (!work.length || !old.length) continue
     if (type === 'weight_reps') {
       const maxW = Math.max(...work.map((s) => s.weight ?? 0))
@@ -180,10 +184,53 @@ export function fmtVolume(kg: number) {
 }
 
 export function fmtSet(s: WorkoutSet, type: ExerciseType) {
-  if (type === 'duration') return s.duration != null ? fmtClock(s.duration) : '—'
-  if (type === 'reps') return s.reps != null ? `${s.reps} reps` : '—'
-  if (type === 'assisted') return `-${fmtKg(s.weight ?? 0)} kg × ${s.reps ?? 0}`
-  return `${fmtKg(s.weight ?? 0)} kg × ${s.reps ?? 0}`
+  const rpe = s.rpe ? ` · RPE ${fmtRpe(s.rpe)}` : ''
+  if (type === 'duration') return (s.duration != null ? fmtClock(s.duration) : '—') + rpe
+  if (type === 'reps') return (s.reps != null ? `${s.reps} reps` : '—') + rpe
+  if (type === 'assisted') return `-${fmtKg(s.weight ?? 0)} kg × ${s.reps ?? 0}${rpe}`
+  return `${fmtKg(s.weight ?? 0)} kg × ${s.reps ?? 0}${rpe}`
+}
+
+export const RPE_VALUES = [6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10]
+export const fmtRpe = (v: number) => String(v).replace('.', ',')
+
+/* ---------- superseries ---------- */
+
+/** Colores de las superseries (por orden de aparición) */
+export const SUPERSET_COLORS = ['#a78bfa', '#f59e0b', '#22d3ee', '#f472b6', '#84cc16', '#fb7185']
+
+/** Superseries de verdad (2 ejercicios o más): id → número 0, 1, 2… por orden */
+export function supersetIndex(list: { supersetId?: string | null }[]) {
+  const count = new Map<string, number>()
+  for (const e of list) if (e.supersetId) count.set(e.supersetId, (count.get(e.supersetId) ?? 0) + 1)
+  const out = new Map<string, number>()
+  for (const e of list) if (e.supersetId && (count.get(e.supersetId) ?? 0) > 1 && !out.has(e.supersetId)) out.set(e.supersetId, out.size)
+  return out
+}
+
+export const supersetLetter = (i: number) => String.fromCharCode(65 + (i % 26))
+
+/** Une el ejercicio `other` a la superserie de `ei` (lo coloca justo detrás del grupo) */
+export function joinSuperset<T extends { supersetId?: string | null }>(list: T[], ei: number, other: number, newId: string): T[] {
+  const base = list[ei]
+  const id = base.supersetId ?? newId
+  const otherOld = list[other].supersetId
+  // Se mueve el otro ejercicio (y su grupo, si tenía) justo detrás del grupo de `ei`
+  const moving = (e: T, i: number) => i === other || (!!otherOld && otherOld !== id && e.supersetId === otherOld)
+  const stay = list.map((e, i) => ({ e: i === ei ? { ...e, supersetId: id } : e, i })).filter(({ e, i }) => !moving(e, i))
+  const moved = list.filter(moving).map((e) => ({ ...e, supersetId: id }))
+  const out = stay.map((x) => x.e)
+  let at = -1
+  out.forEach((e, i) => e.supersetId === id && (at = i))
+  return [...out.slice(0, at + 1), ...moved, ...out.slice(at + 1)]
+}
+
+/** Saca un ejercicio de su superserie (si queda uno solo, el grupo desaparece) */
+export function leaveSuperset<T extends { supersetId?: string | null }>(list: T[], ei: number): T[] {
+  const id = list[ei].supersetId
+  if (!id) return list
+  const left = list.filter((e, i) => i !== ei && e.supersetId === id).length
+  return list.map((e, i) => (i === ei || (left < 2 && e.supersetId === id) ? { ...e, supersetId: null } : e))
 }
 
 /** "Ayer a las 10:56", "hoy a las 18:20", "14 oct a las 9:02" */

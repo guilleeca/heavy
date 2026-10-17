@@ -36,7 +36,7 @@ const LIBRARY_MAP: Record<string, string> = {
   'curl arana (barra)': '2kattbR',
   'extension de pierna': 'my33uHU',
   'press de banca (mancuerna)': 'SpYC0Kp',
-  'fondos': '9WTm7dq',
+  fondos: '9WTm7dq',
   'press de pantorrilla (maquina)': '7B4F5nZ',
   'russian twist (con peso anadido)': 'fZFZ704',
   'jalon al pecho a un brazo': 'U5INZY6',
@@ -106,8 +106,23 @@ export function parseCsv(text: string): Record<string, string>[] {
 }
 
 const MONTHS: Record<string, number> = {
-  ene: 0, jan: 0, feb: 1, mar: 2, abr: 3, apr: 3, may: 4, jun: 5, jul: 6, ago: 7, aug: 7,
-  sep: 8, set: 8, oct: 9, nov: 10, dic: 11, dec: 11,
+  ene: 0,
+  jan: 0,
+  feb: 1,
+  mar: 2,
+  abr: 3,
+  apr: 3,
+  may: 4,
+  jun: 5,
+  jul: 6,
+  ago: 7,
+  aug: 7,
+  sep: 8,
+  set: 8,
+  oct: 9,
+  nov: 10,
+  dic: 11,
+  dec: 11,
 }
 
 /** "14 oct 2026, 10:56" (o "Oct 14, 2026, 10:56" en inglés) → fecha local */
@@ -172,7 +187,11 @@ export type ImportWorkout = {
   exercises: WorkoutExercise[]
 }
 
-export type ExerciseMatch = { hevyName: string; sets: number; target: { kind: 'library' | 'custom'; exercise: Exercise } | { kind: 'new'; custom: NewCustom } }
+export type ExerciseMatch = {
+  hevyName: string
+  sets: number
+  target: { kind: 'library' | 'custom'; exercise: Exercise } | { kind: 'new'; custom: NewCustom }
+}
 
 export type ImportPlan = {
   workouts: ImportWorkout[]
@@ -185,12 +204,7 @@ export type ImportPlan = {
 const SET_TYPE: Record<string, SetType> = { normal: 'normal', warmup: 'warmup', dropset: 'drop', failure: 'failure' }
 const num = (s: string) => (s === '' || s == null ? null : Number(s.replace(',', '.')))
 
-export function buildPlan(
-  rows: Record<string, string>[],
-  library: Exercise[],
-  myCustoms: Exercise[],
-  existingStarts: number[],
-): ImportPlan {
+export function buildPlan(rows: Record<string, string>[], library: Exercise[], myCustoms: Exercise[], existingStarts: number[]): ImportPlan {
   if (!rows.length || !('exercise_title' in rows[0]) || !('start_time' in rows[0])) {
     throw new Error('Este archivo no parece una exportación de entrenos de Hevy.')
   }
@@ -234,13 +248,7 @@ export function buildPlan(
         name: customName,
         equipment: guessEquipment(n),
         muscle: guessMuscle(n),
-        type: /asistid|assisted/.test(n)
-          ? 'assisted'
-          : st.duration && !st.reps
-            ? 'duration'
-            : !st.weight && st.reps
-              ? 'reps'
-              : 'weight_reps',
+        type: /asistid|assisted/.test(n) ? 'assisted' : st.duration && !st.reps ? 'duration' : !st.weight && st.reps ? 'reps' : 'weight_reps',
       }
       newCustoms.set(key(customName), custom)
       resolved.set(hevyName, custom.ref)
@@ -273,7 +281,12 @@ export function buildPlan(
     for (const r of list) {
       // Un ejercicio nuevo empieza cuando cambia el nombre o se reinicia el índice de serie
       if (!current || r.exercise_title !== lastTitle || r.set_index === '0') {
-        current = { exerciseId: resolved.get(r.exercise_title)!, notes: r.exercise_notes ?? '', sets: [] }
+        current = {
+          exerciseId: resolved.get(r.exercise_title)!,
+          notes: r.exercise_notes ?? '',
+          sets: [],
+          supersetId: r.superset_id ? `hevy-${startedAt.getTime()}-${r.superset_id}` : null,
+        }
         exercises.push(current)
         lastTitle = r.exercise_title
       }
@@ -282,6 +295,7 @@ export function buildPlan(
         weight: num(r.weight_kg),
         reps: num(r.reps),
         duration: num(r.duration_seconds),
+        rpe: num(r.rpe),
       }
       current.sets.push(set)
     }

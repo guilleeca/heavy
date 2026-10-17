@@ -27,6 +27,9 @@ export type ActiveWorkoutApi = {
   setRestSeconds: (ei: number, s: number) => void
   addSet: (ei: number) => void
   removeSet: (ei: number, si: number) => void
+  /** Unir `ei` con el ejercicio `other` en una superserie (null: sacarlo de la suya) */
+  setSuperset: (ei: number, other: number | null) => void
+  setRpe: (ei: number, si: number, rpe: number | null) => void
   setSetType: (ei: number, si: number, type: SetType) => void
   updateSet: (ei: number, si: number, patch: Partial<Pick<LiveSet, 'weight' | 'reps' | 'duration'>>) => void
   toggleDone: (ei: number, si: number) => void

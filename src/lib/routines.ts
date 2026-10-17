@@ -15,6 +15,7 @@ export type RoutineExercise = {
   notes: string
   restSeconds: number
   sets: RoutineSet[]
+  supersetId?: string | null
 }
 
 export type Routine = {
@@ -46,7 +47,9 @@ export const SET_TYPE_LABEL: Record<SetType, string> = {
 export const REST_OPTIONS = [0, 15, 30, 45, 60, 75, 90, 105, 120, 150, 180, 210, 240, 300]
 
 export const newSet = (prev?: RoutineSet): RoutineSet =>
-  prev ? { ...prev, type: prev.type === 'warmup' ? 'normal' : prev.type } : { type: 'normal', weight: null, reps: null, repsMax: null, duration: null }
+  prev
+    ? { ...prev, type: prev.type === 'warmup' ? 'normal' : prev.type }
+    : { type: 'normal', weight: null, reps: null, repsMax: null, duration: null }
 
 export const newRoutineExercise = (exerciseId: string, rest = 90): RoutineExercise => ({
   exerciseId,

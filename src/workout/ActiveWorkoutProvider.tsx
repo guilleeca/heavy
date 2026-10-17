@@ -5,6 +5,8 @@ import type { Routine } from '../lib/routines'
 import {
   defaultTitle,
   effective,
+  joinSuperset,
+  leaveSuperset,
   previousSets,
   uid,
   workoutVolume,
@@ -15,7 +17,7 @@ import {
 } from '../lib/workouts'
 import { ActiveWorkoutContext, type ActiveWorkoutApi, type FinishInput } from './context'
 import { restDoneAlert } from './feedback'
-import { sendPush } from '../lib/push'
+import { pushEnabledHere, sendPush } from '../lib/push'
 import { askNotificationPermission, closeWorkoutNotification, nextPending, showWorkoutNotification } from './notify'
 
 const storageKey = (userId: string) => `heavy.active.${userId}`
@@ -192,6 +194,20 @@ export function ActiveWorkoutProvider({ children }: { children: ReactNode }) {
     return () => window.clearTimeout(t)
   }, [active?.rest, findExercise])
 
+  // Aviso de fin de descanso desde el servidor (push): llega a su hora aunque el
+  // móvil esté bloqueado y la app dormida. Se reprograma cada vez que cambia el descanso.
+  const [pushHere, setPushHere] = useState(false)
+  useEffect(() => {
+    void pushEnabledHere().then(setPushHere)
+  }, [active?.id])
+  const alarmAt = useRef<number | null>(null)
+  const restEnd = active?.rest?.endsAt ?? null
+  useEffect(() => {
+    if (!pushHere || restEnd === alarmAt.current) return
+    alarmAt.current = restEnd
+    void supabase.functions.invoke('rest-alarm', { body: { endsAt: restEnd } }).catch(() => {})
+  }, [restEnd, pushHere])
+
   const mutate = useCallback((fn: (a: ActiveWorkout) => ActiveWorkout) => setActive((a) => (a ? fn(a) : a)), [])
   const mutateEx = useCallback(
     (ei: number, fn: (e: LiveExercise) => LiveExercise) => mutate((a) => ({ ...a, exercises: a.exercises.map((e, i) => (i === ei ? fn(e) : e)) })),
@@ -239,8 +255,20 @@ export function ActiveWorkoutProvider({ children }: { children: ReactNode }) {
             }
           : x,
       )
+      // Superserie: no se descansa hasta terminar la ronda (todos los ejercicios del grupo)
+      const round = exercises[ei].sets.filter((x) => x.done).length
+      const midRound =
+        !!e.supersetId &&
+        exercises.some((x, i) => i !== ei && x.supersetId === e.supersetId && x.sets.length >= round && x.sets.filter((y) => y.done).length < round)
       // Al completar una serie arranca el descanso del ejercicio
-      const rest = done && e.restSeconds > 0 ? { endsAt: Date.now() + e.restSeconds * 1000, total: e.restSeconds } : done ? null : a.rest
+      const rest =
+        done && midRound
+          ? null
+          : done && e.restSeconds > 0
+            ? { endsAt: Date.now() + e.restSeconds * 1000, total: e.restSeconds }
+            : done
+              ? null
+              : a.rest
       return { ...a, exercises, rest }
     },
     [workouts, userId],
@@ -324,6 +352,7 @@ export function ActiveWorkoutProvider({ children }: { children: ReactNode }) {
             exerciseId: re.exerciseId,
             notes: re.notes,
             restSeconds: re.restSeconds,
+            supersetId: re.supersetId ?? null,
             sets: re.sets.map((s) => ({
               key: uid(),
               type: s.type,
@@ -352,13 +381,16 @@ export function ActiveWorkoutProvider({ children }: { children: ReactNode }) {
             return {
               exerciseId: e.exerciseId,
               notes: e.notes,
+              supersetId: e.supersetId ?? null,
               sets: e.sets
                 .map((s, i) => ({ s, eff: effective(s, prev[i]) }))
                 .filter(({ s }) => s.done)
-                .map(({ s, eff }) => ({ type: s.type, ...eff })),
+                .map(({ s, eff }) => ({ type: s.type, ...eff, ...(s.rpe ? { rpe: s.rpe } : {}) })),
             }
           })
           .filter((e) => e.sets.length > 0)
+          // Una superserie que se queda con un solo ejercicio deja de serlo
+          .map((e, _, all) => (e.supersetId && all.filter((x) => x.supersetId === e.supersetId).length < 2 ? { ...e, supersetId: null } : e))
         const startedAt = input.startedAt ?? active.startedAt
         const endedAt = input.durationS != null ? startedAt + input.durationS * 1000 : Date.now()
         const id = active.id
@@ -411,6 +443,9 @@ export function ActiveWorkoutProvider({ children }: { children: ReactNode }) {
       setRestSeconds: (ei, s) => mutateEx(ei, (e) => ({ ...e, restSeconds: s })),
       addSet: (ei) => mutateEx(ei, (e) => ({ ...e, sets: [...e.sets, emptySet(e.sets.at(-1))] })),
       removeSet: (ei, si) => mutateEx(ei, (e) => ({ ...e, sets: e.sets.filter((_, i) => i !== si) })),
+      setSuperset: (ei, other) =>
+        mutate((a) => ({ ...a, exercises: other == null ? leaveSuperset(a.exercises, ei) : joinSuperset(a.exercises, ei, other, uid()) })),
+      setRpe: (ei, si, rpe) => mutateEx(ei, (e) => ({ ...e, sets: e.sets.map((s, i) => (i === si ? { ...s, rpe } : s)) })),
       setSetType: (ei, si, type) => mutateEx(ei, (e) => ({ ...e, sets: e.sets.map((s, i) => (i === si ? { ...s, type } : s)) })),
       updateSet: (ei, si, patch) => mutateEx(ei, (e) => ({ ...e, sets: e.sets.map((s, i) => (i === si ? { ...s, ...patch } : s)) })),
       toggleDone: (ei, si) => mutate((a) => toggleIn(a, ei, si)),

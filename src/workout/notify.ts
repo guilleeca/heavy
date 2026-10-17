@@ -29,9 +29,23 @@ async function registration() {
 
 /** Siguiente serie pendiente: [índice ejercicio, índice serie] */
 export function nextPending(a: ActiveWorkout): [number, number] | null {
+  const pending = (ei: number) => a.exercises[ei].sets.findIndex((s) => !s.done)
   for (let ei = 0; ei < a.exercises.length; ei++) {
-    const si = a.exercises[ei].sets.findIndex((s) => !s.done)
-    if (si >= 0) return [ei, si]
+    const si = pending(ei)
+    if (si < 0) continue
+    // En una superserie toca el ejercicio del grupo que va más atrasado (se alternan)
+    const id = a.exercises[ei].supersetId
+    if (id) {
+      let best = ei
+      let bestDone = a.exercises[ei].sets.filter((s) => s.done).length
+      a.exercises.forEach((e, i) => {
+        if (i === ei || e.supersetId !== id || pending(i) < 0) return
+        const d = e.sets.filter((s) => s.done).length
+        if (d < bestDone) [best, bestDone] = [i, d]
+      })
+      return [best, pending(best)]
+    }
+    return [ei, si]
   }
   return null
 }
@@ -39,6 +53,11 @@ export function nextPending(a: ActiveWorkout): [number, number] | null {
 export async function showWorkoutNotification(a: ActiveWorkout, find: (id: string) => Exercise | undefined, restDone = false) {
   const reg = await registration()
   if (!reg) return
+  // Si el aviso del servidor ya avisó del fin del descanso, no se vuelve a sonar
+  if (restDone) {
+    const shown = await reg.getNotifications({ tag: TAG })
+    if (shown.some((n) => n.title === '¡Descanso terminado!')) restDone = false
+  }
   const next = nextPending(a)
   const nextEx = next ? a.exercises[next[0]] : null
   const nextSet = next && nextEx ? nextEx.sets[next[1]] : null

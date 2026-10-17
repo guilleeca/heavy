@@ -1,0 +1,126 @@
+.pc {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 4px 16px 8px;
+}
+
+.pc-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 500;
+}
+
+.pc-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-2);
+}
+
+.pc-input input {
+  width: 110px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 22px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.pc-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pc-chips button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.pc-chips button[aria-pressed='true'] {
+  background: var(--accent);
+  color: #fff;
+}
+
+.pc-chips i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.pc-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 120px;
+  padding: 0 8px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.pc-sleeve {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 10px;
+  transform: translateY(-50%);
+  background: linear-gradient(#cfd3d8, #8b9097);
+}
+
+.pc-collar {
+  position: relative;
+  flex: none;
+  width: 10px;
+  height: 34px;
+  border-radius: 3px;
+  background: #b9bec4;
+}
+
+.pc-plate {
+  position: relative;
+  flex: none;
+  width: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 4px;
+  box-shadow: inset -3px 0 0 rgba(0, 0, 0, 0.25);
+}
+
+.pc-plate small {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.75);
+}
+
+.pc-result {
+  margin: 0;
+  font-size: 15px;
+}
+
+.pc-left {
+  color: var(--warning);
+}
+
+.pc-sub {
+  font-size: 13px;
+  color: var(--text-2);
+}

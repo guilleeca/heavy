@@ -9,6 +9,10 @@ self.addEventListener('push', (event) => {
     data = { title: 'Heavy', body: event.data ? event.data.text() : '' }
   }
   const scope = self.registration.scope
+  if (data.type === 'rest') {
+    event.waitUntil(restDone(data, scope))
+    return
+  }
   event.waitUntil(
     self.registration.showNotification(data.title || 'Heavy', {
       body: data.body || '',
@@ -41,3 +45,26 @@ self.addEventListener('notificationclick', (event) => {
     })(),
   )
 })
+
+// Fin del descanso avisado por el servidor (rest-alarm). Sustituye a la notificación
+// del entreno en curso, conservando su texto ("Siguiente: …") y el botón de completar serie.
+async function restDone(data, scope) {
+  const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+  // Con la app en pantalla ya avisa ella misma
+  if (windows.some((w) => w.visibilityState === 'visible')) return
+  const current = (await self.registration.getNotifications({ tag: 'heavy-workout' }))[0]
+  // La app ya avisó (estaba despierta): no se repite el sonido
+  if (current && current.title === data.title) return
+  await self.registration.showNotification(data.title, {
+    tag: 'heavy-workout',
+    body: current && current.body ? current.body : data.body,
+    icon: scope + 'pwa-192.png',
+    badge: scope + 'pwa-192.png',
+    renotify: true,
+    silent: false,
+    requireInteraction: true,
+    vibrate: [250, 120, 250],
+    actions: [{ action: 'complete', title: '✓ Completar serie' }],
+    timestamp: Date.now(),
+  })
+}

@@ -20,19 +20,27 @@ import '../components/CustomExerciseForm.css'
 import './EditWorkout.css'
 import './ImportActivity.css'
 
-type KSet = RoutineSet & { _k: string }
-type KItem = { _k: string; exerciseId: string; notes: string; sets: KSet[] }
+type KSet = RoutineSet & { _k: string; rpe?: number | null }
+type KItem = { _k: string; exerciseId: string; notes: string; sets: KSet[]; supersetId?: string | null }
 const rid = () => Math.random().toString(36).slice(2, 10)
 const toItems = (list: WorkoutExercise[]): KItem[] =>
-  list.map((e) => ({ _k: rid(), exerciseId: e.exerciseId, notes: e.notes ?? '', sets: e.sets.map((s) => ({ ...s, repsMax: null, _k: rid() })) }))
+  list.map((e) => ({
+    _k: rid(),
+    exerciseId: e.exerciseId,
+    notes: e.notes ?? '',
+    supersetId: e.supersetId ?? null,
+    sets: e.sets.map((s) => ({ ...s, repsMax: null, _k: rid() })),
+  }))
 const fromItems = (list: KItem[]): WorkoutExercise[] =>
   list
     .map((e) => ({
       exerciseId: e.exerciseId,
       notes: e.notes.trim(),
-      sets: e.sets.map((s) => ({ type: s.type, weight: s.weight, reps: s.reps, duration: s.duration })),
+      supersetId: e.supersetId ?? null,
+      sets: e.sets.map((s) => ({ type: s.type, weight: s.weight, reps: s.reps, duration: s.duration, ...(s.rpe ? { rpe: s.rpe } : {}) })),
     }))
     .filter((e) => e.sets.length > 0)
+    .map((e, _, all) => (e.supersetId && all.filter((x) => x.supersetId === e.supersetId).length < 2 ? { ...e, supersetId: null } : e))
 const blankSet = (prev?: KSet): KSet => ({
   type: prev && prev.type !== 'warmup' ? prev.type : 'normal',
   weight: prev?.weight ?? null,
