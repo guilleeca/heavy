@@ -29,12 +29,15 @@ export function ExerciseDetail() {
   const ex = findExercise(id)
   const sessions = useMemo(() => (ex ? exerciseSessions(workouts, userId, ex.id, ex.type) : []), [ex, workouts, userId])
 
-  // Instrucciones paso a paso desde ExerciseDB (solo ejercicios de la biblioteca)
+  // Instrucciones paso a paso (traducidas y guardadas en la app: no dependen de internet)
   useEffect(() => {
     if (tab !== 'instrucciones' || !ex || ex.custom || steps) return
-    fetch(`https://oss.exercisedb.dev/api/v1/exercises/${ex.id}`)
-      .then((r) => r.json())
-      .then((d) => setSteps((d?.data?.instructions ?? []).map((s: string) => s.replace(/^Step:\d+\s*/, ''))))
+    import('../data/instructions.json')
+      .then((mod) => {
+        const data = mod.default as { s: string[]; e: Record<string, number[]> }
+        const idx = data.e[ex.id] ?? (ex.gifId ? data.e[ex.gifId] : undefined) ?? []
+        setSteps(idx.map((i) => data.s[i]))
+      })
       .catch(() => setSteps([]))
   }, [tab, ex, steps])
 
@@ -146,7 +149,7 @@ export function ExerciseDetail() {
                 ))}
               </ol>
             ) : (
-              <p className="exd-note">No se pudieron cargar las instrucciones. Revisa la conexión.</p>
+              <p className="exd-note">Este ejercicio no tiene instrucciones.</p>
             )}
           </>
         )}

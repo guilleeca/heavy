@@ -42,7 +42,8 @@ export const WorkoutCard = memo(function WorkoutCard({ workout }: { workout: Wor
   const open = () => navigate(`/entreno/${workout.id}`)
   const go = (i: number) => track.current?.scrollTo({ left: i * track.current.clientWidth, behavior: 'smooth' })
 
-  const shown = workout.exercises.slice(0, 5)
+  // Caben 6 filas: si hay más, 5 y "y N más"
+  const shown = workout.exercises.length <= 6 ? workout.exercises : workout.exercises.slice(0, 5)
   const more = workout.exercises.length - shown.length
 
   return (
@@ -116,7 +117,7 @@ export const WorkoutCard = memo(function WorkoutCard({ workout }: { workout: Wor
         <div className="wc-carousel">
           <div
             ref={track}
-            className="wc-track"
+            className={`wc-track ${workout.photos.length ? 'wc-square' : ''}`}
             onScroll={(e) => {
               const el = e.currentTarget
               setSlide(Math.round(el.scrollLeft / el.clientWidth))

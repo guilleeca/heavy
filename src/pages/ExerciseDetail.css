@@ -27,7 +27,7 @@
 }
 
 .exd-media {
-  height: min(42dvh, 340px);
+  height: min(34dvh, 250px);
   margin: -16px calc(-1 * max(16px, env(safe-area-inset-left, 0px))) 0;
   background: #ffffff;
   display: grid;

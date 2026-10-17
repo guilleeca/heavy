@@ -101,10 +101,15 @@
   flex: 0 0 100%;
   scroll-snap-align: center;
   scroll-snap-stop: always;
-  min-height: 300px;
   display: flex;
   flex-direction: column;
   text-align: left;
+  overflow: hidden;
+}
+
+/* Con foto, todas las páginas son cuadradas como la foto; sin foto, solo lo que ocupan */
+.wc-square .wc-slide {
+  aspect-ratio: 1;
 }
 
 .wc-photo {
@@ -190,6 +195,10 @@
 
 .wc-body {
   width: 100%;
+  max-width: 230px;
+}
+
+.wc-square .wc-body {
   max-width: 300px;
 }
 
