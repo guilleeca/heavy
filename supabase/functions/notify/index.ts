@@ -37,7 +37,30 @@ Deno.serve(async (req) => {
       Deno.env.get('VAPID_PUBLIC_KEY') ?? '',
       Deno.env.get('VAPID_PRIVATE_KEY') ?? '',
     )
-    const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+    // Clave de administrador: se prueban la nueva (sb_secret_…) y la antigua (service_role) y se usa la que funcione
+    const url = Deno.env.get('SUPABASE_URL')!
+    const candidates: [string, string][] = []
+    try {
+      const keys = JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS') ?? '{}') as Record<string, string>
+      for (const [k, v] of Object.entries(keys)) candidates.push([`secret:${k}`, v])
+    } catch {
+      /* sin claves nuevas */
+    }
+    if (Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')) candidates.push(['service_role', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!])
+    if (Deno.env.get('HEAVY_SECRET_KEY')) candidates.push(['HEAVY_SECRET_KEY', Deno.env.get('HEAVY_SECRET_KEY')!])
+    let admin: ReturnType<typeof createClient> | null = null
+    const tried: string[] = []
+    for (const [label, key] of candidates) {
+      const client = createClient(url, key, { auth: { persistSession: false } })
+      const { data, error, status } = await client.from('push_subscriptions').select('endpoint').limit(5)
+      tried.push(`${label}(${key.slice(0, 9)}…): ${status} ${error?.message ?? `ok, ${data?.length} filas`}`)
+      if (!error && data?.length) {
+        admin = client
+        break
+      }
+    }
+    console.log(JSON.stringify({ claves: tried }))
+    if (!admin) return json({ error: 'Ninguna clave de administrador funciona', claves: tried }, 500)
     // Quién llama (sesión de la app)
     const token = (req.headers.get('Authorization') ?? '').replace('Bearer ', '')
     const { data: auth } = await admin.auth.getUser(token)
@@ -61,7 +84,7 @@ Deno.serve(async (req) => {
 
     if (type === 'live') {
       const { data: live } = await admin.from('live_sessions').select('title').eq('user_id', caller).maybeSingle()
-      if (!live) return json({ sent: 0 })
+      if (!live) return json({ sent: 0, reason: 'no hay entreno en directo' })
       recipients = await others()
       message = {
         title: `${name} está entrenando`,
@@ -77,7 +100,7 @@ Deno.serve(async (req) => {
         .select('id, user_id, title, kind, distance_m, visibility, sets_count')
         .eq('id', id)
         .maybeSingle()
-      if (!w || w.user_id !== caller || w.visibility !== 'everyone') return json({ sent: 0 })
+      if (!w || w.user_id !== caller || w.visibility !== 'everyone') return json({ sent: 0, reason: 'entreno no encontrado, ajeno o privado' })
       recipients = await others()
       const activity = w.kind && w.kind !== 'gym'
       message = activity
@@ -100,10 +123,11 @@ Deno.serve(async (req) => {
     }
 
     if (type === 'comment') {
-      const { data: c } = await admin.from('workout_comments').select('id, workout_id, user_id, body').eq('id', id).maybeSingle()
-      if (!c || c.user_id !== caller) return json({ sent: 0 })
+      const { data: c, error: ce } = await admin.from('workout_comments').select('id, workout_id, user_id, body').eq('id', id).maybeSingle()
+      if (!c) return json({ sent: 0, reason: `no se encuentra el comentario ${ce?.message ?? ''}`.trim() })
+      if (c.user_id !== caller) return json({ sent: 0, reason: 'el comentario no es tuyo' })
       const { data: w } = await admin.from('workouts').select('id, user_id, title').eq('id', c.workout_id).maybeSingle()
-      if (!w) return json({ sent: 0 })
+      if (!w) return json({ sent: 0, reason: 'no se encuentra el entreno' })
       // Al dueño del entreno y a quien haya comentado antes (menos a quien comenta)
       const { data: prev } = await admin.from('workout_comments').select('user_id').eq('workout_id', w.id)
       recipients = [...new Set([w.user_id, ...(prev ?? []).map((p) => p.user_id as string)])].filter((u) => u !== caller)
